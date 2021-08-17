@@ -2,6 +2,10 @@
 
 将 C/C++ 代码转换为流程图
 
+## 效果
+
+<div style="text-align:center;"><img style="max-height: 50vh" src="assets/test.svg"/></div>
+
 ## 安装
 
 ```bash
