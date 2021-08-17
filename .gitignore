@@ -16,3 +16,4 @@ target/
 *.png
 *.dot
 !assets/test.svg
+.DS_Store
