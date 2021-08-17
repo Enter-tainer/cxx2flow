@@ -10,10 +10,16 @@ fn main() -> anyhow::Result<()> {
         (version: "0.1.0")
         (author: "mgt. <mgt@oi-wiki.org>")
         (about: "Convert your C/C++ code to control flow graph")
-        (@arg OUTPUT: -o --output +takes_value "Sets the output file. e.g. graph.dot")
+        (@arg OUTPUT: -o --output +takes_value "Sets the output file.
+If not specified, result will be directed to stdout.
+e.g. graph.dot")
         (@arg INPUT: +required "Sets the input file. e.g. test.cpp")
         (@arg FUNCTION: "The function you want to convert. e.g. main")
     )
+    .after_help("Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
+EXAMPLES:
+    cxx2flow test.cpp | dot -Tpng -o test.png
+    cxx2flow main.cpp my_custom_func | dot -Tsvg -o test.svg")
     .setting(clap::AppSettings::ColoredHelp)
     .get_matches();
     let path = matches.value_of("INPUT").unwrap();
