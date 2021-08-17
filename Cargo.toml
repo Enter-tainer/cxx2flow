@@ -1,9 +1,11 @@
 [package]
 name = "cxx2flow"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 description = "Convert your C/C++ code to control flow graph"
 license = "MIT"
+repository = "https://github.com/Enter-tainer/cxx2flow"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
