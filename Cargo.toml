@@ -1,5 +1,5 @@
 [package]
-name = "flow"
+name = "cxx2flow"
 version = "0.1.0"
 edition = "2018"
 
@@ -7,6 +7,7 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.42"
+clap = "2.33.3"
 log = "0.4.14"
 tree-sitter = "0.19.5"
 tree-sitter-cpp = "0.19.0"

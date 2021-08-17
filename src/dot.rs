@@ -35,7 +35,7 @@ pub fn from_graph(graph: &Graph) -> Result<String> {
             GraphNodeType::Start => {
                 res.push_str(format!("D{} -> D{};\n", i.id, i.id + 1).as_str());
             }
-            GraphNodeType::End => res.push_str("} "),
+            GraphNodeType::End => res.push_str("}\n"),
             GraphNodeType::Node => match i.jump {
                 Some(id) => res.push_str(format!("D{} -> D{};\n", i.id, id).as_str()),
                 None => res.push_str(format!("D{} -> D{};\n", i.id, i.id + 1).as_str()),
