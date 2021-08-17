@@ -1,3 +1,5 @@
+use std::vec;
+
 use anyhow::Result;
 use tree_sitter::{Node, Parser};
 
@@ -98,7 +100,7 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Ast> {
             let str = stat.utf8_text(content)?;
             Ok(Ast::Stat(String::from(str)))
         }
-        "{" | "}" => Err(anyhow::anyhow!("garbage token")),
+        "{" | "}" | "comment" => Err(anyhow::anyhow!("garbage token")),
         _ => Err(anyhow::format_err!(
             "unknown statement: {:?}, kind: {:?}",
             stat,
@@ -110,11 +112,19 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Ast> {
 
 fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Ast> {
     let condition = if_stat.child_by_field_name("condition").unwrap();
-    let blk1 = if_stat.child_by_field_name("consequence").unwrap();
-    let blk2 = if_stat.child_by_field_name("alternative").unwrap();
+    let blk1 = if_stat.child_by_field_name("consequence");
+    let blk2 = if_stat.child_by_field_name("alternative");
     let cond_str = condition.utf8_text(content)?;
-    let blk1 = parse_stat(blk1, content)?;
-    let blk2 = parse_stat(blk2, content)?;
+    let blk1 = if blk1.is_some() {
+        parse_stat(blk1.unwrap(), content)?
+    } else {
+        vec![]
+    };
+    let blk2 = if blk2.is_some() {
+        parse_stat(blk2.unwrap(), content)?
+    } else {
+        vec![]
+    };
     let res: Ast = Ast::If(String::from(cond_str), blk1, blk2);
     Ok(res)
 }

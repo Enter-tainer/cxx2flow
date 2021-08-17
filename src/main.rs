@@ -5,6 +5,7 @@ extern crate log;
 use parser::parse;
 
 mod ast;
+mod dot;
 mod graph;
 mod parser;
 fn main() -> anyhow::Result<()> {
@@ -13,6 +14,8 @@ fn main() -> anyhow::Result<()> {
     let ast_vec = parse(path)?;
     info!("{:#?}", ast_vec);
     let graph = graph::from_ast(ast_vec)?;
-    dbg!(graph);
+    // dbg!(graph);
+    let dot = dot::from_graph(&graph)?;
+    print!("{}", dot);
     Ok(())
 }

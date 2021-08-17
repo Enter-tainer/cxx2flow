@@ -1,7 +1,7 @@
 use crate::ast::Ast;
 use anyhow::Result;
 #[derive(Debug)]
-enum GraphNodeType {
+pub enum GraphNodeType {
     Start,
     End,
     Node,
@@ -10,13 +10,13 @@ enum GraphNodeType {
 
 #[derive(Debug)]
 pub struct GraphNode {
-    id: usize,
-    node_type: GraphNodeType,
-    content: String,
-    jump: Option<usize>,
+    pub id: usize,
+    pub node_type: GraphNodeType,
+    pub content: String,
+    pub jump: Option<usize>,
 }
 
-type Graph = Vec<GraphNode>;
+pub type Graph = Vec<GraphNode>;
 
 fn transform_ast_impl(
     node: &Ast,
