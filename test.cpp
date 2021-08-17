@@ -1,25 +1,34 @@
-void fft(Complex y[], int len, int on) {
-  change(y, len);
-  for (int h = 2; h <= len; h <<= 1) {             // 模拟合并过程
-    Complex wn(cos(2 * PI / h), sin(2 * PI / h));  // 计算当前单位复根
-    for (int j = 0; j < len; j += h) {
-      Complex w(1, 0);  // 计算当前单位复根
-      for (int k = j; k < j + h / 2; k++) {
-        Complex u = y[k];
-        Complex t = w * y[k + h / 2];
-        y[k] = u + t;  // 这就是把两部分分治的结果加起来
-        y[k + h / 2] = u - t;
-        // 后半个 “step” 中的ω一定和 “前半个” 中的成相反数
-        // “红圈”上的点转一整圈“转回来”，转半圈正好转成相反数
-        // 一个数相反数的平方与这个数自身的平方相等
-        w = w * wn;
+int main() {
+  scanf("%d", &t);
+  while (t--) {
+    // 大根堆，维护前一半元素（存小值）
+    priority_queue<int, vector<int>, less<int> > a;
+    // 小根堆，维护后一半元素（存大值）
+    priority_queue<int, vector<int>, greater<int> > b;
+    while (scanf("%d", &x) && x) {
+      // 若为查询并删除操作，输出并删除大根堆堆顶元素
+      // 因为这题要求输出中位数中较小者（偶数个数字会存在两个中位数候选）
+      // 这个和上面的第k大讲解有稍许出入，但如果理解了上面的，这个稍微变通下便可理清
+      if (x == -1) {
+        printf("%d\n", a.top());
+        a.pop();
+      }
+      // 若为插入操作，根据大根堆堆顶的元素值，选择合适的堆进行插入
+      else {
+        if (a.empty() || x <= a.top())
+          a.push(x);
+        else
+          b.push(x);
+      }
+      // 对堆顶堆进行调整
+      if (a.size() > (a.size() + b.size() + 1) / 2) {
+        b.push(a.top());
+        a.pop();
+      } else if (a.size() < (a.size() + b.size() + 1) / 2) {
+        a.push(b.top());
+        b.pop();
       }
     }
   }
-  if (on == -1) {
-    reverse(y, y + len);
-    for (int i = 0; i < len; i++) {
-      y[i].x /= len;
-    }
-  }
+  return 0;
 }

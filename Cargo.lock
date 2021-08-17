@@ -58,6 +58,7 @@ name = "flow"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "if_chain",
  "log",
  "pretty_env_logger",
  "tree-sitter",
@@ -93,6 +94,12 @@ checksum = "df004cfca50ef23c36850aaaa59ad52cc70d0e90243c3c7737a4dd32dc7a3c4f"
 dependencies = [
  "quick-error",
 ]
+
+[[package]]
+name = "if_chain"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f7280c75fb2e2fc47080ec80ccc481376923acb04501957fc38f935c3de5088"
 
 [[package]]
 name = "libc"

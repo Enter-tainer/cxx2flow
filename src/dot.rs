@@ -42,7 +42,9 @@ pub fn from_graph(graph: &Graph) -> Result<String> {
             },
             GraphNodeType::Choice => {
                 res.push_str(format!("D{} -> D{} [label=\"Y\"];\n", i.id, i.id + 1).as_str());
-                res.push_str(format!("D{} -> D{} [label=\"N\"];\n", i.id, i.jump.unwrap()).as_str());
+                res.push_str(
+                    format!("D{} -> D{} [label=\"N\"];\n", i.id, i.jump.unwrap()).as_str(),
+                );
             }
         }
     }

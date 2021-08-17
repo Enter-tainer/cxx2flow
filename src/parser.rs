@@ -4,6 +4,7 @@ use anyhow::Result;
 use tree_sitter::{Node, Parser};
 
 use crate::ast::Ast;
+
 pub fn parse(path: &str) -> Result<Vec<Ast>> {
     let mut parser = Parser::new();
     let language = tree_sitter_cpp::language();
@@ -100,12 +101,13 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Ast> {
             let str = stat.utf8_text(content)?;
             Ok(Ast::Stat(String::from(str)))
         }
-        "{" | "}" | "comment" => Err(anyhow::anyhow!("garbage token")),
-        _ => Err(anyhow::format_err!(
-            "unknown statement: {:?}, kind: {:?}",
-            stat,
-            stat.kind()
-        )),
+        // ignore all unrecognized token
+        _ | "{" | "}" | "comment" => Err(anyhow::anyhow!("garbage token")),
+        // _ => Err(anyhow::format_err!(
+        //     "unknown statement: {:?}, kind: {:?}",
+        //     stat,
+        //     stat.kind()
+        // )),
     }
     // unreachable!();
 }
@@ -131,28 +133,42 @@ fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Ast> {
 
 fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Ast> {
     let condition = while_stat.child_by_field_name("condition").unwrap();
-    let body = while_stat.child_by_field_name("body").unwrap();
+    let body = while_stat.child_by_field_name("body");
     let cond_str = condition.utf8_text(content)?;
-    let body = parse_stat(body, content)?;
+    let body = if body.is_some() {
+        parse_stat(body.unwrap(), content)?
+    } else {
+        vec![]
+    };
     let res: Ast = Ast::While(String::from(cond_str), body);
     Ok(res)
 }
 
 fn parse_for_stat(for_stat: Node, content: &[u8]) -> Result<Ast> {
     let mut cursor = for_stat.walk();
-    let init = for_stat.child_by_field_name("initializer").unwrap();
-    let cond = for_stat.child_by_field_name("condition").unwrap();
-    let update = for_stat.child_by_field_name("update").unwrap();
-    cursor.goto_first_child();
-    while cursor.goto_next_sibling() {}
-    let body = cursor.node();
-    let init = init.utf8_text(content)?;
-    let init = String::from(init);
-    let cond = cond.utf8_text(content)?;
-    let cond = String::from(cond);
-    let update = update.utf8_text(content)?;
-    let update = String::from(update);
-    let body = parse_stat(body, content)?;
-    let res: Ast = Ast::For(init, cond, update, body);
+    let init = for_stat.child_by_field_name("initializer");
+    let cond = for_stat.child_by_field_name("condition");
+    let update = for_stat.child_by_field_name("update");
+    let mut init_str: String = String::new();
+    let mut cond_str: String = String::new();
+    let mut update_str: String = String::new();
+    if let Some(init) = init {
+        let init = init.utf8_text(content)?;
+        init_str = String::from(init);
+    }
+    if let Some(cond) = cond {
+        let cond = cond.utf8_text(content)?;
+        cond_str = String::from(cond);
+    }
+    if let Some(update) = update {
+        let update = update.utf8_text(content)?;
+        update_str = String::from(update);
+    }
+    let mut body: Vec<Ast> = vec![];
+    if cursor.goto_first_child() {
+        while cursor.goto_next_sibling() {}
+        body = parse_stat(cursor.node(), content)?;
+    };
+    let res: Ast = Ast::For(init_str, cond_str, update_str, body);
     Ok(res)
 }
