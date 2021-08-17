@@ -1,6 +1,6 @@
 use crate::ast::Ast;
 use anyhow::Result;
-
+#[derive(Debug)]
 enum GraphNodeType {
     Start,
     End,
@@ -8,6 +8,7 @@ enum GraphNodeType {
     Choice,
 }
 
+#[derive(Debug)]
 pub struct GraphNode {
     id: usize,
     node_type: GraphNodeType,

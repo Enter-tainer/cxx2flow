@@ -1,6 +1,4 @@
-use std::rc::Rc;
-
-use uuid::Uuid;
+#[derive(Debug)]
 pub enum Ast {
     Stat(String),
     // Content

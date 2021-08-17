@@ -5,14 +5,17 @@ int main() {
     char op[5];
     int x, y;
     scanf("%s%d%d", op, &x, &y);
+    while (true) {
+      return;
+    }
     if (op[0] == 'I' && op[1] == 'F')
       DQ::push_front(make_pair(_(x), y));
     else if (op[0] == 'I' && op[1] == 'G')
       DQ::push_back(make_pair(_(x), y));
     else if (op[0] == 'D' && op[1] == 'F')
-      DQ::pop_front();
+      continue;
     else if (op[0] == 'D' && op[1] == 'G')
-      DQ::pop_back();
+      break;
     else
       printf("%d\n", DQ::query(x, y));
   }

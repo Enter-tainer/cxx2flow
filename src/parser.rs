@@ -1,5 +1,5 @@
 use anyhow::Result;
-use tree_sitter::{Node, Parser, TreeCursor};
+use tree_sitter::{Node, Parser};
 
 use crate::ast::Ast;
 pub fn parse(path: &str) -> Result<Vec<Ast>> {
@@ -23,23 +23,126 @@ pub fn parse(path: &str) -> Result<Vec<Ast>> {
     for i in functions {
         cursor.reset(i);
         let stats = cursor.node().child_by_field_name("body").unwrap();
-        return parse_compond_stat_to_ast(stats);
+        return parse_stat(stats, &content);
     }
     unreachable!();
 }
 
-fn parse_compond_stat_to_ast(compond_stat: Node) -> Result<Vec<Ast>> {
-    let mut cursor = compond_stat.walk();
-    let mut vec: Vec<Ast> = Vec::new();
-    if !cursor.goto_first_child() {
-        return Ok(vec);
-    }
-    loop {
-
-        if !cursor.goto_next_sibling() {
-            break;
+fn parse_stat(stat: Node, content: &[u8]) -> Result<Vec<Ast>> {
+    info!("{:?}", stat);
+    if stat.kind() == "compound_statement" {
+        let mut cursor = stat.walk();
+        let mut vec: Vec<Ast> = Vec::new();
+        if !cursor.goto_first_child() {
+            return Ok(vec);
         }
+        loop {
+            let mut skip = false;
+            let mut inner_cursor = cursor.clone();
+            loop {
+                let node = inner_cursor.node();
+                // info!("node: {:?}, kind: {:?}", node, node.kind());
+                if node.kind() == "compound_statement" {
+                    if !inner_cursor.goto_first_child() {
+                        skip = true
+                    }
+                } else {
+                    break;
+                }
+            }
+            if skip {
+                continue;
+            }
+            let node = parse_single_stat(cursor.node(), content);
+            if let Ok(node) = node {
+                vec.push(node);
+            } else if let Err(msg) = node {
+                if msg.to_string() != "garbage token" {
+                    return Err(msg);
+                }
+            }
+            if !cursor.goto_next_sibling() {
+                break;
+            }
+        }
+        Ok(vec)
+    } else {
+        let res = parse_single_stat(stat, content);
+        if let Ok(res) = res {
+            return Ok(vec![res]);
+        }
+        if let Err(msg) = res {
+            if msg.to_string() != "garbage token" {
+                return Err(msg);
+            } else {
+                return Ok(vec![]);
+            }
+        }
+        unreachable!();
     }
+}
 
-    Ok(vec)
+fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Ast> {
+    info!("parsing single stat: {:?}", stat);
+    match stat.kind() {
+        "continue_statement" => Ok(Ast::Continue("continue".to_string())),
+        "break_statement" => Ok(Ast::Break("break".to_string())),
+        "return_statement" => {
+            let str = stat.utf8_text(content)?;
+            Ok(Ast::Return(String::from(str)))
+        }
+        "if_statement" => parse_if_stat(stat, content),
+        "for_statement" => parse_for_stat(stat, content),
+        "while_statement" => parse_while_stat(stat, content),
+        "expression_statement" | "declaration" => {
+            let str = stat.utf8_text(content)?;
+            Ok(Ast::Stat(String::from(str)))
+        }
+        "{" | "}" => Err(anyhow::anyhow!("garbage token")),
+        _ => Err(anyhow::format_err!(
+            "unknown statement: {:?}, kind: {:?}",
+            stat,
+            stat.kind()
+        )),
+    }
+    // unreachable!();
+}
+
+fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Ast> {
+    let condition = if_stat.child_by_field_name("condition").unwrap();
+    let blk1 = if_stat.child_by_field_name("consequence").unwrap();
+    let blk2 = if_stat.child_by_field_name("alternative").unwrap();
+    let cond_str = condition.utf8_text(content)?;
+    let blk1 = parse_stat(blk1, content)?;
+    let blk2 = parse_stat(blk2, content)?;
+    let res: Ast = Ast::If(String::from(cond_str), blk1, blk2);
+    Ok(res)
+}
+
+fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Ast> {
+    let condition = while_stat.child_by_field_name("condition").unwrap();
+    let body = while_stat.child_by_field_name("body").unwrap();
+    let cond_str = condition.utf8_text(content)?;
+    let body = parse_stat(body, content)?;
+    let res: Ast = Ast::While(String::from(cond_str), body);
+    Ok(res)
+}
+
+fn parse_for_stat(for_stat: Node, content: &[u8]) -> Result<Ast> {
+    let mut cursor = for_stat.walk();
+    let init = for_stat.child_by_field_name("initializer").unwrap();
+    let cond = for_stat.child_by_field_name("condition").unwrap();
+    let update = for_stat.child_by_field_name("update").unwrap();
+    cursor.goto_first_child();
+    while cursor.goto_next_sibling() {}
+    let body = cursor.node();
+    let init = init.utf8_text(content)?;
+    let init = String::from(init);
+    let cond = cond.utf8_text(content)?;
+    let cond = String::from(cond);
+    let update = update.utf8_text(content)?;
+    let update = String::from(update);
+    let body = parse_stat(body, content)?;
+    let res: Ast = Ast::For(init, cond, update, body);
+    Ok(res)
 }
