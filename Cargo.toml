@@ -1,6 +1,6 @@
 [package]
 name = "cxx2flow"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2018"
 description = "Convert your C/C++ code to control flow graph"
 license = "MIT"
