@@ -55,11 +55,11 @@ fn transform_ast_impl(
             for i in chld1 {
                 transform_ast_impl(i, continue_vec, break_vec, graph)?;
             }
-            let block1_last_id = graph.len();
+            let block1_last_id = graph.len() - 1;
             for i in chld2 {
                 transform_ast_impl(i, continue_vec, break_vec, graph)?;
             }
-            let block2_last_id = graph.len();
+            let block2_last_id = graph.len() - 1;
             graph[choice_id].jump = Some(block1_last_id + 1);
             graph[block1_last_id].jump = Some(block2_last_id + 1);
         }
@@ -77,7 +77,7 @@ fn transform_ast_impl(
             for i in chld {
                 transform_ast_impl(i, &mut continue_vec_inner, &mut break_vec_inner, graph)?;
             }
-            let block_last_id = graph.len();
+            let block_last_id = graph.len() - 1;
             // what if block is empty?
             graph[block_last_id].jump = Some(choice_id);
             graph[choice_id].jump = Some(block_last_id + 1);
