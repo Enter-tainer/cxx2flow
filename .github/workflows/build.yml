@@ -1,0 +1,37 @@
+on: [push]
+
+name: Windows build
+
+jobs:
+  windows:
+    name: Windows build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-gnu	
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target x86_64-pc-windows-gnu
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cxx2flow.exe
+          path: target/x86_64-pc-windows-gnu/release/cxx2flow.exe
+  linux:
+    name: Linux build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cxx2flow
+          path: target/release/cxx2flow
