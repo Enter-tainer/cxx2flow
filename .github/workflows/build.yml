@@ -1,6 +1,6 @@
 on: [push]
 
-name: Windows build
+name: CI build
 
 jobs:
   windows:
