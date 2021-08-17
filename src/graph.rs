@@ -22,6 +22,7 @@ fn transform_ast_impl(
     node: &Ast,
     continue_vec: &mut Vec<usize>,
     break_vec: &mut Vec<usize>,
+    return_vec: &mut Vec<usize>,
     graph: &mut Graph,
 ) -> Result<()> {
     match &node {
@@ -41,6 +42,9 @@ fn transform_ast_impl(
             if let Ast::Continue(_) = &node {
                 continue_vec.push(graph_node.id);
             }
+            if let Ast::Return(_) = &node {
+                return_vec.push(graph_node.id);
+            }
             graph.push(graph_node);
         }
         Ast::If(cond, chld1, chld2) => {
@@ -53,11 +57,11 @@ fn transform_ast_impl(
             let choice_id = graph.len();
             graph.push(choice_node);
             for i in chld1 {
-                transform_ast_impl(i, continue_vec, break_vec, graph)?;
+                transform_ast_impl(i, continue_vec, break_vec, return_vec, graph)?;
             }
             let block1_last_id = graph.len() - 1;
             for i in chld2 {
-                transform_ast_impl(i, continue_vec, break_vec, graph)?;
+                transform_ast_impl(i, continue_vec, break_vec, return_vec, graph)?;
             }
             let block2_last_id = graph.len() - 1;
             graph[choice_id].jump = Some(block1_last_id + 1);
@@ -75,7 +79,13 @@ fn transform_ast_impl(
             let mut continue_vec_inner: Vec<usize> = Vec::new();
             let mut break_vec_inner: Vec<usize> = Vec::new();
             for i in chld {
-                transform_ast_impl(i, &mut continue_vec_inner, &mut break_vec_inner, graph)?;
+                transform_ast_impl(
+                    i,
+                    &mut continue_vec_inner,
+                    &mut break_vec_inner,
+                    return_vec,
+                    graph,
+                )?;
             }
             let block_last_id = graph.len() - 1;
             // what if block is empty?
@@ -107,7 +117,13 @@ fn transform_ast_impl(
             let mut continue_vec_inner: Vec<usize> = Vec::new();
             let mut break_vec_inner: Vec<usize> = Vec::new();
             for i in chld {
-                transform_ast_impl(i, &mut continue_vec_inner, &mut break_vec_inner, graph)?;
+                transform_ast_impl(
+                    i,
+                    &mut continue_vec_inner,
+                    &mut break_vec_inner,
+                    return_vec,
+                    graph,
+                )?;
             }
             let upd_node = GraphNode {
                 id: graph.len(),
@@ -129,10 +145,10 @@ fn transform_ast_impl(
     Ok(())
 }
 
-fn transform_ast(node: &Ast, graph: &mut Graph) -> Result<()> {
+fn transform_ast(node: &Ast, return_vec: &mut Vec<usize>, graph: &mut Graph) -> Result<()> {
     let mut continue_vec: Vec<usize> = Vec::new();
     let mut break_vec: Vec<usize> = Vec::new();
-    transform_ast_impl(node, &mut continue_vec, &mut break_vec, graph)
+    transform_ast_impl(node, &mut continue_vec, &mut break_vec, return_vec, graph)
 }
 
 pub fn from_ast(ast: Vec<Ast>) -> Result<Graph> {
@@ -143,8 +159,12 @@ pub fn from_ast(ast: Vec<Ast>) -> Result<Graph> {
         content: "Start".to_string(),
         jump: None,
     });
+    let mut return_vec: Vec<usize> = Vec::new();
     for i in ast {
-        transform_ast(&i, &mut graph)?;
+        transform_ast(&i, &mut return_vec, &mut graph)?;
+    }
+    for i in return_vec {
+        graph[i].jump = Some(graph.len());
     }
     graph.push(GraphNode {
         id: graph.len(),
