@@ -1,34 +1,39 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int logn = 21;
+const int maxn = 2000001;
+int f[maxn][logn + 1], Logn[maxn + 1];
+inline int read() {  //快读
+  char c = getchar();
+  int x = 0, f = 1;
+  while (c < '0' || c > '9') {
+    if (c == '-') f = -1;
+    c = getchar();
+  }
+  while (c >= '0' && c <= '9') {
+    x = x * 10 + c - '0';
+    c = getchar();
+  }
+  return x * f;
+}
+void pre() {  //准备工作，初始化
+  Logn[1] = 0;
+  Logn[2] = 1;
+  for (int i = 3; i < maxn; i++) {
+    Logn[i] = Logn[i / 2] + 1;
+  }
+}
 int main() {
-  scanf("%d", &t);
-  while (t--) {
-    // 大根堆，维护前一半元素（存小值）
-    priority_queue<int, vector<int>, less<int> > a;
-    // 小根堆，维护后一半元素（存大值）
-    priority_queue<int, vector<int>, greater<int> > b;
-    while (scanf("%d", &x) && x) {
-      // 若为查询并删除操作，输出并删除大根堆堆顶元素
-      // 因为这题要求输出中位数中较小者（偶数个数字会存在两个中位数候选）
-      // 这个和上面的第k大讲解有稍许出入，但如果理解了上面的，这个稍微变通下便可理清
-      if (x == -1) {
-        printf("%d\n", a.top());
-        a.pop();
-      }
-      // 若为插入操作，根据大根堆堆顶的元素值，选择合适的堆进行插入
-      else {
-        if (a.empty() || x <= a.top())
-          a.push(x);
-        else
-          b.push(x);
-      }
-      // 对堆顶堆进行调整
-      if (a.size() > (a.size() + b.size() + 1) / 2) {
-        b.push(a.top());
-        a.pop();
-      } else if (a.size() < (a.size() + b.size() + 1) / 2) {
-        a.push(b.top());
-        b.pop();
-      }
-    }
+  int n = read(), m = read();
+  for (int i = 1; i <= n; i++) f[i][0] = read();
+  pre();
+  for (int j = 1; j <= logn; j++)
+    for (int i = 1; i + (1 << j) - 1 <= n; i++)
+      f[i][j] = max(f[i][j - 1], f[i + (1 << (j - 1))][j - 1]);  // ST表具体实现
+  for (int i = 1; i <= m; i++) {
+    int x = read(), y = read();
+    int s = Logn[y - x + 1];
+    printf("%d\n", max(f[x][s], f[y - (1 << s) + 1][s]));
   }
   return 0;
 }

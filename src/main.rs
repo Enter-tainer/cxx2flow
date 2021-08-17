@@ -1,6 +1,4 @@
-extern crate pretty_env_logger;
-#[macro_use]
-extern crate log;
+use std::env::args;
 
 use parser::parse;
 
@@ -9,10 +7,8 @@ mod dot;
 mod graph;
 mod parser;
 fn main() -> anyhow::Result<()> {
-    pretty_env_logger::init();
     let path = "test.cpp";
-    let ast_vec = parse(path)?;
-    info!("{:#?}", ast_vec);
+    let ast_vec = parse(path, args().nth(1))?;
     let graph = graph::from_ast(ast_vec)?;
     // dbg!(graph);
     let dot = dot::from_graph(&graph)?;

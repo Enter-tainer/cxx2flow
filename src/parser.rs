@@ -5,7 +5,7 @@ use tree_sitter::{Node, Parser};
 
 use crate::ast::Ast;
 
-pub fn parse(path: &str) -> Result<Vec<Ast>> {
+pub fn parse(path: &str, function_name: Option<String>) -> Result<Vec<Ast>> {
     let mut parser = Parser::new();
     let language = tree_sitter_cpp::language();
     parser.set_language(language)?;
@@ -23,16 +23,25 @@ pub fn parse(path: &str) -> Result<Vec<Ast>> {
             break;
         }
     }
+    let target_function = function_name.unwrap_or("main".to_string());
     for i in functions {
         cursor.reset(i);
         let stats = cursor.node().child_by_field_name("body").unwrap();
+        let func_name = cursor
+            .node()
+            .child_by_field_name("declarator")
+            .and_then(|t| t.child_by_field_name("declarator"))
+            .and_then(|t| Some(t.utf8_text(&content).unwrap()))
+            .unwrap();
+        if func_name != target_function {
+            continue;
+        }
         return parse_stat(stats, &content);
     }
     unreachable!();
 }
 
 fn parse_stat(stat: Node, content: &[u8]) -> Result<Vec<Ast>> {
-    info!("{:?}", stat);
     if stat.kind() == "compound_statement" {
         let mut cursor = stat.walk();
         let mut vec: Vec<Ast> = Vec::new();
@@ -44,7 +53,6 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Vec<Ast>> {
             let mut inner_cursor = cursor.clone();
             loop {
                 let node = inner_cursor.node();
-                // info!("node: {:?}, kind: {:?}", node, node.kind());
                 if node.kind() == "compound_statement" {
                     if !inner_cursor.goto_first_child() {
                         skip = true
@@ -86,7 +94,6 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Vec<Ast>> {
 }
 
 fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Ast> {
-    info!("parsing single stat: {:?}", stat);
     match stat.kind() {
         "continue_statement" => Ok(Ast::Continue("continue".to_string())),
         "break_statement" => Ok(Ast::Break("break".to_string())),
@@ -102,7 +109,8 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Ast> {
             Ok(Ast::Stat(String::from(str)))
         }
         // ignore all unrecognized token
-        _ | "{" | "}" | "comment" => Err(anyhow::anyhow!("garbage token")),
+        _ => Err(anyhow::anyhow!("garbage token")),
+        // _ | "{" | "}" | "comment" => Err(anyhow::anyhow!("garbage token")),
         // _ => Err(anyhow::format_err!(
         //     "unknown statement: {:?}, kind: {:?}",
         //     stat,
