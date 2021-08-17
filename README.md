@@ -49,3 +49,8 @@ EXAMPLES:
     cxx2flow test.cpp | dot -Tpng -o test.png
     cxx2flow main.cpp my_custom_func | dot -Tsvg -o test.svg
 ```
+
+## 限制
+
+- 暂时不支持 do-while，switch 和 goto
+- 支持的控制流语句有：while，for，if，break，continue，break，return。
