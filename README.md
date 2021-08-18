@@ -4,7 +4,12 @@
 
 ## 效果
 
-<div style="text-align:center;"><img style="max-height: 50vh" src="assets/test.svg"/></div>
+两种样式：
+| | |
+|:-:|:-:|
+|折线|平滑|
+|![ployline](assets/polyline.svg)|![curve](assets/curve.svg)|
+
 
 ## 安装
 
