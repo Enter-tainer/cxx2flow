@@ -2,7 +2,7 @@ use crate::graph::{Graph, GraphNodeType};
 use anyhow::Result;
 
 pub fn from_graph(graph: &Graph, curved: bool) -> Result<String> {
-    let mut res = "digraph { \n".to_string();
+    let mut res = "digraph { \n concentrate=true; \n".to_string();
     if !curved {
         res.push_str("graph [splines=polyline];\n");
     }
@@ -32,7 +32,7 @@ pub fn from_graph(graph: &Graph, curved: bool) -> Result<String> {
             ),
             GraphNodeType::Choice => res.push_str(
                 format!(
-                    "D{} [shape=diamond, label=\"{}\"];\n",
+                    "D{} [shape=diamond, label=\"{}?\"];\n",
                     i.id,
                     i.content.replace("\"", "\\\"")
                 )

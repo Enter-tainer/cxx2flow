@@ -99,13 +99,15 @@ fn transform_ast_impl(
             }
         }
         Ast::For(init, cond, upd, chld) => {
-            let init_node = GraphNode {
-                id: graph.len(),
-                node_type: GraphNodeType::Node,
-                content: init.clone(),
-                jump: None,
-            };
-            graph.push(init_node);
+            if !init.is_empty() {
+                let init_node = GraphNode {
+                    id: graph.len(),
+                    node_type: GraphNodeType::Node,
+                    content: init.clone(),
+                    jump: None,
+                };
+                graph.push(init_node);
+            }
             let choice_node = GraphNode {
                 id: graph.len(),
                 node_type: GraphNodeType::Choice,
@@ -125,20 +127,23 @@ fn transform_ast_impl(
                     graph,
                 )?;
             }
-            let upd_node = GraphNode {
-                id: graph.len(),
-                node_type: GraphNodeType::Node,
-                content: upd.clone(),
-                jump: Some(choice_id),
-            };
-            let upd_id = graph.len();
-            graph[choice_id].jump = Some(upd_id + 1);
-            graph.push(upd_node);
+            if !upd.is_empty() {
+                let upd_node = GraphNode {
+                    id: graph.len(),
+                    node_type: GraphNodeType::Node,
+                    content: upd.clone(),
+                    jump: Some(choice_id),
+                };
+                graph.push(upd_node);
+            }
+            let last_id = graph.len() - 1;
+            graph[last_id].jump = Some(choice_id);
+            graph[choice_id].jump = Some(last_id + 1);
             for i in continue_vec_inner {
-                graph[i].jump = Some(upd_id);
+                graph[i].jump = Some(last_id);
             }
             for i in break_vec_inner {
-                graph[i].jump = Some(upd_id + 1);
+                graph[i].jump = Some(last_id + 1);
             }
         }
     }

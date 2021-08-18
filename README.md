@@ -28,7 +28,7 @@ cargo install cxx2flow
 为了编译生成的 dot 文件，你需要安装 graphviz，并将其添加到 PATH 中。也可以将生成的结果复制进在线的 graphviz 服务中，如 http://viz-js.com/ 。
 
 ```
-cxx2flow 0.1.4
+cxx2flow 0.1.5
 mgt. <mgt@oi-wiki.org>
 Convert your C/C++ code to control flow chart
 

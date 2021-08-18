@@ -5,6 +5,24 @@ use tree_sitter::{Node, Parser};
 
 use crate::ast::Ast;
 
+fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
+    if node.kind() == kind {
+        return Some(node);
+    }
+    let mut cursor = node.walk();
+    if cursor.goto_first_child() {
+        loop {
+            if let Some(v) = filter_ast(cursor.node(), kind) {
+                return Some(v);
+            }
+            if !cursor.goto_next_sibling() {
+                break;
+            } 
+        }
+    }
+    None
+}
+
 pub fn parse(path: &str, function_name: Option<String>) -> Result<Vec<Ast>> {
     let mut parser = Parser::new();
     let language = tree_sitter_cpp::language();
@@ -16,7 +34,8 @@ pub fn parse(path: &str, function_name: Option<String>) -> Result<Vec<Ast>> {
     let mut functions: Vec<Node> = Vec::new();
     loop {
         let node = cursor.node();
-        if node.kind() == "function_definition" {
+        let node = filter_ast(node, "function_definition");
+        if let Some(node) = node {
             functions.push(node);
         }
         if !cursor.goto_next_sibling() {
@@ -27,18 +46,25 @@ pub fn parse(path: &str, function_name: Option<String>) -> Result<Vec<Ast>> {
     for i in functions {
         cursor.reset(i);
         let stats = cursor.node().child_by_field_name("body").unwrap();
-        let func_name = cursor
-            .node()
-            .child_by_field_name("declarator")
-            .and_then(|t| t.child_by_field_name("declarator"))
-            .and_then(|t| Some(t.utf8_text(&content).unwrap()))
-            .unwrap();
+        let node = cursor.node().child_by_field_name("declarator");
+        if node.is_none() {
+            return Err(anyhow::anyhow!("declarator not found in node"));
+        }
+        let node = node.unwrap();
+        let func_name = filter_ast(node, "identifier");
+        if func_name.is_none() {
+            continue;
+        }
+        let func_name = func_name.unwrap().utf8_text(&content).unwrap();
         if func_name != target_function {
             continue;
         }
         return parse_stat(stats, &content);
     }
-    unreachable!();
+    Err(anyhow::anyhow!(
+        "function \"{}\" not found in this file.",
+        target_function
+    ))
 }
 
 fn parse_stat(stat: Node, content: &[u8]) -> Result<Vec<Ast>> {
