@@ -16,7 +16,7 @@ cargo install cxx2flow
 
 ### 下载预构建二进制
 
-可以到 [GitHub Actions](https://github.com/Enter-tainer/cxx2flow/actions) 或 [Nightly.link](https://nightly.link/Enter-tainer/cxx2flow/workflows/build/master) 下载最新构建的二进制，包含 Linux 和 Windows 版本。
+可以到 [GitHub Actions](https://github.com/Enter-tainer/cxx2flow/actions?query=branch%3Amaster+is%3Asuccess+event%3Apush+actor%3AEnter-tainer) 或 [Nightly.link](https://nightly.link/Enter-tainer/cxx2flow/workflows/build/master) 下载最新构建的二进制，包含 Linux 和 Windows 版本。
 
 ## 使用
 
