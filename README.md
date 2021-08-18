@@ -22,16 +22,17 @@ cargo install cxx2flow
 
 为了编译生成的 dot 文件，你需要安装 graphviz，并将其添加到 PATH 中。也可以将生成的结果复制进在线的 graphviz 服务中，如 http://viz-js.com/ 。
 
-``` bash
-cxx2flow --help
-cxx2flow 0.1.0
+```
+cxx2flow 0.1.3
 mgt. <mgt@oi-wiki.org>
-Convert your C/C++ code to control flow graph
+Convert your C/C++ code to control flow chart
 
 USAGE:
-    cxx2flow [OPTIONS] <INPUT> [FUNCTION]
+    cxx2flow [FLAGS] [OPTIONS] <INPUT> [FUNCTION]
 
 FLAGS:
+    -c, --curved     Sets the style of the flow chart.
+                     If specified, output flow chart will have curved connection line.
     -h, --help       Prints help information
     -V, --version    Prints version information
 
