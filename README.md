@@ -54,4 +54,5 @@ EXAMPLES:
 ## 限制
 
 - 暂时不支持 do-while，switch 和 goto
+- 不支持预处理器，如 include, ifdef, ifndef...
 - 支持的控制流语句有：while，for，if，break，continue，break，return。
