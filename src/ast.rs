@@ -12,6 +12,8 @@ pub enum Ast {
     // Conditon, Children1, Children2
     While(String, Vec<Ast>),
     // Condtion, Children
+    DoWhile(String, Vec<Ast>),
+    // Condition, Children
     For(String, String, String, Vec<Ast>),
     // Init, Cond, Upd, Children
 }

@@ -130,6 +130,7 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Ast> {
         "if_statement" => parse_if_stat(stat, content),
         "for_statement" => parse_for_stat(stat, content),
         "while_statement" => parse_while_stat(stat, content),
+        "do_statement" => parse_do_while_stat(stat, content),
         "expression_statement" | "declaration" => {
             let str = stat.utf8_text(content)?;
             Ok(Ast::Stat(String::from(str)))
@@ -175,6 +176,19 @@ fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Ast> {
         vec![]
     };
     let res: Ast = Ast::While(String::from(cond_str), body);
+    Ok(res)
+}
+
+fn parse_do_while_stat(do_while_stat: Node, content: &[u8]) -> Result<Ast> {
+    let condition = do_while_stat.child_by_field_name("condition").unwrap();
+    let body = do_while_stat.child_by_field_name("body");
+    let cond_str = condition.utf8_text(content)?;
+    let body = if body.is_some() {
+        parse_stat(body.unwrap(), content)?
+    } else {
+        vec![]
+    };
+    let res: Ast = Ast::DoWhile(String::from(cond_str), body);
     Ok(res)
 }
 

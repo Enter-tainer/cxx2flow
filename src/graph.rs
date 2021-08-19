@@ -98,6 +98,36 @@ fn transform_ast_impl(
                 graph[i].jump = Some(choice_id);
             }
         }
+        Ast::DoWhile(cond, chld) => {
+            let jump_back_id = graph.len();
+            let mut continue_vec_inner: Vec<usize> = Vec::new();
+            let mut break_vec_inner: Vec<usize> = Vec::new();
+            for i in chld {
+                transform_ast_impl(
+                    i,
+                    &mut continue_vec_inner,
+                    &mut break_vec_inner,
+                    return_vec,
+                    graph,
+                )?;
+            }
+            let mut choice_node = GraphNode {
+                id: graph.len(),
+                node_type: GraphNodeType::Choice,
+                content: cond.clone(),
+                jump: None,
+            };
+            let choice_id = graph.len();
+            let block_last_id = choice_id;
+            choice_node.jump = Some(jump_back_id);
+            graph.push(choice_node);
+            for i in break_vec_inner {
+                graph[i].jump = Some(block_last_id + 1);
+            }
+            for i in continue_vec_inner {
+                graph[i].jump = Some(choice_id);
+            }
+        }
         Ast::For(init, cond, upd, chld) => {
             if !init.is_empty() {
                 let init_node = GraphNode {
