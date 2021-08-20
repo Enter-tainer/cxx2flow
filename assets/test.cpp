@@ -24,6 +24,73 @@ void pre() {  //准备工作，初始化
     Logn[i] = Logn[i / 2] + 1;
   }
 }
+
+void test1 {
+  while (a) {
+    while (b) {
+      while (c) {
+        d;
+      }
+    }
+  }
+}
+
+void test2() {
+  if (a) {
+    while (b) {
+      e;
+    }
+  } else {
+    f;
+  }
+}
+
+void test3() {
+  while (a) {
+    while (b) {
+      for (c; d; e) {
+        f;
+      }
+    }
+  }
+}
+void test4() {
+  while (g) {
+    if (h) {
+      if(i) {
+        for (r; s; t) {
+          u;
+          if (v) {
+            continue;
+          }
+        }
+        if (j) {
+
+        } else {
+          if (k) {
+            while (l) {
+              wtf;
+            }
+          }
+        }
+      }
+    } else {
+      n;
+    }
+  }
+  o;
+}
+void test5() {
+  while (p) {
+    if (q) {
+      r;
+    } else {
+      s;
+    }
+  }
+
+}
+
 int main() {
   int n = read(), m = read();
   for (int i = 1; i <= n; i++) f[i][0] = read();

@@ -28,8 +28,10 @@ EXAMPLES:
     let func = matches.value_of("FUNCTION").map(|x| x.to_string());
     let output = matches.value_of("OUTPUT");
     let curved = matches.is_present("curved");
-    let ast_vec = parser::parse(path, func)?;
-    let graph = graph::from_ast(ast_vec)?;
+    let (ast_vec, maxid) = parser::parse(path, func)?;
+    // dbg!(&ast_vec);
+    let graph = graph::from_ast(ast_vec, maxid)?;
+    // dbg!(&graph);
     let dot = dot::from_graph(&graph, curved)?;
     if let Some(output) = output {
         std::fs::write(output, dot)?;

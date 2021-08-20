@@ -1,11 +1,49 @@
-use crate::ast::Ast;
+use std::{cell::RefCell, rc::Rc};
+
+use crate::ast::{Ast, AstNode};
 use anyhow::Result;
 #[derive(Debug)]
 pub enum GraphNodeType {
     Start,
+    // next
     End,
-    Node,
-    Choice,
+    Node(Option<usize>),
+    // optional jump, otherwise, it is next node
+    Choice(Option<usize>, Option<usize>),
+    // true, false
+}
+
+impl GraphNodeType {
+    fn set_jump(&mut self, target: usize) -> Result<()> {
+        if let GraphNodeType::Node(ref mut t) = self {
+            *t = Some(target);
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("cannot set jump for node \"{:?}\"", self))
+        }
+    }
+    fn set_true_branch(&mut self, target: usize) -> Result<()> {
+        if let GraphNodeType::Choice(ref mut t, _) = self {
+            *t = Some(target);
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!(
+                "cannot set true branch for node \"{:?}\"",
+                self
+            ))
+        }
+    }
+    fn set_false_branch(&mut self, target: usize) -> Result<()> {
+        if let GraphNodeType::Choice(_, ref mut f) = self {
+            *f = Some(target);
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!(
+                "cannot set false branch for node \"{:?}\"",
+                self
+            ))
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -13,199 +51,270 @@ pub struct GraphNode {
     pub id: usize,
     pub node_type: GraphNodeType,
     pub content: String,
-    pub jump: Option<usize>,
 }
 
 pub type Graph = Vec<GraphNode>;
 
-fn transform_ast_impl(
-    node: &Ast,
-    continue_vec: &mut Vec<usize>,
-    break_vec: &mut Vec<usize>,
-    return_vec: &mut Vec<usize>,
+type AstMap = Vec<usize>;
+
+fn build_ast_map_single(
+    ast: &Rc<RefCell<Ast>>,
     graph: &mut Graph,
+    ast_map: &mut AstMap,
 ) -> Result<()> {
-    match &node {
-        Ast::Stat(content)
-        | Ast::Return(content)
-        | Ast::Continue(content)
-        | Ast::Break(content) => {
-            let graph_node: GraphNode = GraphNode {
-                id: graph.len(),
-                node_type: GraphNodeType::Node,
-                content: content.clone(),
-                jump: None,
-            };
-            if let Ast::Break(_) = &node {
-                break_vec.push(graph_node.id);
-            }
-            if let Ast::Continue(_) = &node {
-                continue_vec.push(graph_node.id);
-            }
-            if let Ast::Return(_) = &node {
-                return_vec.push(graph_node.id);
-            }
-            graph.push(graph_node);
+    let ast_id = ast.borrow().id;
+    let id = graph.len();
+    ast_map[ast_id] = id;
+    match &ast.borrow().node {
+        AstNode::Dummy => Err(anyhow::anyhow!("unexpected dummy node")),
+        AstNode::Stat(s) | AstNode::Continue(s) | AstNode::Break(s) | AstNode::Return(s) => {
+            graph.push(GraphNode {
+                id,
+                node_type: GraphNodeType::Node(None),
+                content: s.clone(),
+            });
+            Ok(())
         }
-        Ast::If(cond, chld1, chld2) => {
-            let choice_node = GraphNode {
-                id: graph.len(),
-                node_type: GraphNodeType::Choice,
+        AstNode::If(cond, t, f) => {
+            graph.push(GraphNode {
+                id,
+                node_type: GraphNodeType::Choice(None, None),
                 content: cond.clone(),
-                jump: None,
-            };
-            let choice_id = graph.len();
-            graph.push(choice_node);
-            for i in chld1 {
-                transform_ast_impl(i, continue_vec, break_vec, return_vec, graph)?;
-            }
-            let block1_last_id = graph.len() - 1;
-            for i in chld2 {
-                transform_ast_impl(i, continue_vec, break_vec, return_vec, graph)?;
-            }
-            let block2_last_id = graph.len() - 1;
-            graph[choice_id].jump = Some(block1_last_id + 1);
-            graph[block1_last_id].jump = Some(block2_last_id + 1);
+            });
+            build_ast_map_vec(t, graph, ast_map)?;
+            build_ast_map_vec(f, graph, ast_map)?;
+            Ok(())
         }
-        Ast::While(cond, chld) => {
-            let choice_node = GraphNode {
-                id: graph.len(),
-                node_type: GraphNodeType::Choice,
+        AstNode::While(cond, body) => {
+            graph.push(GraphNode {
+                id,
+                node_type: GraphNodeType::Choice(None, None),
                 content: cond.clone(),
-                jump: None,
-            };
-            let choice_id = graph.len();
-            graph.push(choice_node);
-            let mut continue_vec_inner: Vec<usize> = Vec::new();
-            let mut break_vec_inner: Vec<usize> = Vec::new();
-            for i in chld {
-                transform_ast_impl(
-                    i,
-                    &mut continue_vec_inner,
-                    &mut break_vec_inner,
-                    return_vec,
-                    graph,
-                )?;
-            }
-            let block_last_id = graph.len() - 1;
-            // what if block is empty?
-            graph[block_last_id].jump = Some(choice_id);
-            graph[choice_id].jump = Some(block_last_id + 1);
-            for i in break_vec_inner {
-                graph[i].jump = Some(block_last_id + 1);
-            }
-            for i in continue_vec_inner {
-                graph[i].jump = Some(choice_id);
-            }
+            });
+            build_ast_map_vec(body, graph, ast_map)?;
+            Ok(())
         }
-        Ast::DoWhile(cond, chld) => {
-            let jump_back_id = graph.len();
-            let mut continue_vec_inner: Vec<usize> = Vec::new();
-            let mut break_vec_inner: Vec<usize> = Vec::new();
-            for i in chld {
-                transform_ast_impl(
-                    i,
-                    &mut continue_vec_inner,
-                    &mut break_vec_inner,
-                    return_vec,
-                    graph,
-                )?;
-            }
-            let mut choice_node = GraphNode {
-                id: graph.len(),
-                node_type: GraphNodeType::Choice,
+        AstNode::DoWhile(cond, body) => {
+            graph.push(GraphNode {
+                id,
+                node_type: GraphNodeType::Choice(None, None),
                 content: cond.clone(),
-                jump: None,
-            };
-            let choice_id = graph.len();
-            let block_last_id = choice_id;
-            choice_node.jump = Some(jump_back_id);
-            graph.push(choice_node);
-            for i in break_vec_inner {
-                graph[i].jump = Some(block_last_id + 1);
-            }
-            for i in continue_vec_inner {
-                graph[i].jump = Some(choice_id);
-            }
+            });
+            build_ast_map_vec(body, graph, ast_map)?;
+            Ok(())
         }
-        Ast::For(init, cond, upd, chld) => {
-            if !init.is_empty() {
-                let init_node = GraphNode {
-                    id: graph.len(),
-                    node_type: GraphNodeType::Node,
-                    content: init.clone(),
-                    jump: None,
-                };
-                graph.push(init_node);
-            }
-            let choice_node = GraphNode {
-                id: graph.len(),
-                node_type: GraphNodeType::Choice,
-                content: cond.clone(),
-                jump: None,
-            };
-            let choice_id = graph.len();
-            graph.push(choice_node);
-            let mut continue_vec_inner: Vec<usize> = Vec::new();
-            let mut break_vec_inner: Vec<usize> = Vec::new();
-            for i in chld {
-                transform_ast_impl(
-                    i,
-                    &mut continue_vec_inner,
-                    &mut break_vec_inner,
-                    return_vec,
-                    graph,
-                )?;
-            }
-            if !upd.is_empty() {
-                let upd_node = GraphNode {
-                    id: graph.len(),
-                    node_type: GraphNodeType::Node,
-                    content: upd.clone(),
-                    jump: Some(choice_id),
-                };
-                graph.push(upd_node);
-            }
-            let last_id = graph.len() - 1;
-            graph[last_id].jump = Some(choice_id);
-            graph[choice_id].jump = Some(last_id + 1);
-            for i in continue_vec_inner {
-                graph[i].jump = Some(last_id);
-            }
-            for i in break_vec_inner {
-                graph[i].jump = Some(last_id + 1);
-            }
-        }
+    }
+}
+
+fn build_ast_map_vec(
+    ast: &[Rc<RefCell<Ast>>],
+    graph: &mut Graph,
+    ast_map: &mut AstMap,
+) -> Result<()> {
+    for i in ast {
+        build_ast_map_single(i, graph, ast_map)?;
     }
     Ok(())
 }
 
-fn transform_ast(node: &Ast, return_vec: &mut Vec<usize>, graph: &mut Graph) -> Result<()> {
-    let mut continue_vec: Vec<usize> = Vec::new();
-    let mut break_vec: Vec<usize> = Vec::new();
-    transform_ast_impl(node, &mut continue_vec, &mut break_vec, return_vec, graph)
-}
-
-pub fn from_ast(ast: Vec<Ast>) -> Result<Graph> {
-    let mut graph: Graph = Vec::new();
+fn build_ast_map(ast: &[Rc<RefCell<Ast>>], graph: &mut Graph, ast_map: &mut AstMap) -> Result<()> {
     graph.push(GraphNode {
         id: 0,
         node_type: GraphNodeType::Start,
-        content: "Start".to_string(),
-        jump: None,
+        content: String::from("Start"),
     });
-    let mut return_vec: Vec<usize> = Vec::new();
-    for i in ast {
-        transform_ast(&i, &mut return_vec, &mut graph)?;
-    }
-    for i in return_vec {
-        graph[i].jump = Some(graph.len());
-    }
+    build_ast_map_vec(ast, graph, ast_map)?;
     graph.push(GraphNode {
         id: graph.len(),
         node_type: GraphNodeType::End,
-        content: "End".to_string(),
-        jump: None,
+        content: String::from("End"),
     });
+    Ok(())
+}
+
+fn find_nearest_loop(
+    ast: Rc<RefCell<Ast>>,
+    graph: &mut Graph,
+    ast_map: &mut AstMap,
+) -> Result<Option<usize>> {
+    let mut i = Rc::downgrade(&ast);
+    loop {
+        match (*i.upgrade().unwrap()).borrow().fa.as_ref() {
+            Some(f) => {
+                let t = i.upgrade().unwrap();
+                i = f.clone();
+                if t.borrow().is_loop() {
+                    return Ok(Some(ast_map[t.borrow().id]));
+                }
+            }
+            None => return Ok(None),
+        }
+    }
+}
+
+fn find_nearest_loop_break(
+    ast: Rc<RefCell<Ast>>,
+    graph: &mut Graph,
+    ast_map: &mut AstMap,
+) -> Result<Option<usize>> {
+    let mut i = Rc::downgrade(&ast);
+    loop {
+        match (*i.upgrade().unwrap()).borrow().fa.as_ref() {
+            Some(f) => {
+                let t = i.upgrade().unwrap();
+                i = f.clone();
+                // now t is the first loop
+                if t.borrow().is_loop() {
+                    if let Some(next) = &t.borrow().next {
+                        // if loop have next, return next's id
+                        return Ok(Some(ast_map[next.upgrade().unwrap().borrow().id]));
+                    };
+                    // or we will climb up to find next
+                    let mut j = Rc::downgrade(&t);
+                    loop {
+                        match (*j.upgrade().unwrap()).borrow().fa.as_ref() {
+                            Some(f) => {
+                                let t = j.upgrade().unwrap();
+                                j = f.clone();
+                                if let Some(t) = &t.borrow().next {
+                                    return Ok(Some(ast_map[t.upgrade().unwrap().borrow().id]));
+                                };
+                            }
+                            None => return Ok(None),
+                        }
+                    }
+                }
+            }
+            None => return Ok(None),
+        }
+    }
+}
+
+fn find_next_exec(
+    ast: Rc<RefCell<Ast>>,
+    graph: &mut Graph,
+    ast_map: &mut AstMap,
+) -> Result<Option<usize>> {
+    // Assuming that this node has no siblings...
+    let node = ast.borrow();
+    if let Some(n) = &node.next {
+        return Ok(Some(ast_map[n.upgrade().unwrap().borrow().id]));
+    }
+    if let Some(f) = &node.fa {
+        let fa = f.upgrade().unwrap();
+        if fa.borrow().is_loop() {
+            Ok(Some(ast_map[fa.borrow().id]))
+        } else {
+            let next = find_next_exec(fa, graph, ast_map)?;
+            Ok(next)
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+fn build_graph_single(
+    ast: Rc<RefCell<Ast>>,
+    graph: &mut Graph,
+    ast_map: &mut AstMap,
+) -> Result<()> {
+    let node = ast.borrow();
+    let id = ast_map[node.id];
+    let len = graph.len();
+    match &node.node {
+        AstNode::Dummy => Err(anyhow::anyhow!("unexpected dummy node")),
+        AstNode::Stat(_) => match node.next {
+            Some(_) => Ok(()),
+            None => {
+                let next = find_next_exec(ast.clone(), graph, ast_map)?;
+                graph[id].node_type.set_jump(next.unwrap_or(len - 1))?;
+                Ok(())
+            }
+        },
+        AstNode::Continue(_) => {
+            let next = find_nearest_loop(ast.clone(), graph, ast_map)?;
+            graph[id].node_type.set_jump(next.unwrap_or(len - 1))?;
+            Ok(())
+        }
+        AstNode::Break(_) => {
+            let next = find_nearest_loop_break(ast.clone(), graph, ast_map)?;
+            graph[id].node_type.set_jump(next.unwrap_or(len - 1))?;
+            Ok(())
+        }
+        AstNode::Return(_) => graph[id].node_type.set_jump(len - 1),
+        AstNode::If(_, b1, b2) => {
+            if !b1.is_empty() {
+                let b1_first_id = b1[0].borrow().id;
+                graph[id].node_type.set_true_branch(ast_map[b1_first_id])?;
+            } else {
+                let next = find_next_exec(ast.clone(), graph, ast_map)?;
+                graph[id]
+                    .node_type
+                    .set_true_branch(next.unwrap_or(len - 1))?;
+            }
+            if !b2.is_empty() {
+                let b2_first_id = b2[0].borrow().id;
+                graph[id].node_type.set_false_branch(ast_map[b2_first_id])?;
+            } else {
+                let next = find_next_exec(ast.clone(), graph, ast_map)?;
+                graph[id]
+                    .node_type
+                    .set_false_branch(next.unwrap_or(len - 1))?;
+            }
+            build_graph_vec(b1, graph, ast_map)?;
+            build_graph_vec(b2, graph, ast_map)?;
+            Ok(())
+        }
+        AstNode::While(_, body) => {
+            if !body.is_empty() {
+                let body_first_id = body[0].borrow().id;
+                graph[id]
+                    .node_type
+                    .set_true_branch(ast_map[body_first_id])?;
+            }
+            let next = find_next_exec(ast.clone(), graph, ast_map)?;
+            graph[id]
+                .node_type
+                .set_false_branch(next.unwrap_or(len - 1))?;
+
+            // set false branch: find next stat, similar to previous
+            build_graph_vec(&body, graph, ast_map)
+        }
+        AstNode::DoWhile(_, body) => {
+            if !body.is_empty() {
+                let body_first_id = body[0].borrow().id;
+                graph[id]
+                    .node_type
+                    .set_true_branch(ast_map[body_first_id])?;
+            }
+            let next = find_nearest_loop_break(ast.clone(), graph, ast_map)?;
+            graph[id]
+                .node_type
+                .set_false_branch(next.unwrap_or(len - 1))?;
+            build_graph_vec(&body, graph, ast_map)
+        }
+    }
+}
+
+fn build_graph_vec(
+    ast: &[Rc<RefCell<Ast>>],
+    graph: &mut Graph,
+    ast_map: &mut AstMap,
+) -> Result<()> {
+    for i in ast {
+        build_graph_single(i.clone(), graph, ast_map)?;
+    }
+    Ok(())
+}
+
+fn build_graph(ast: &[Rc<RefCell<Ast>>], graph: &mut Graph, ast_map: &mut AstMap) -> Result<()> {
+    build_graph_vec(ast, graph, ast_map)
+}
+
+pub fn from_ast(ast: Vec<Rc<RefCell<Ast>>>, max_id: usize) -> Result<Graph> {
+    let mut ast_map: AstMap = vec![0; max_id];
+    let mut graph: Graph = Vec::new();
+    build_ast_map(&ast, &mut graph, &mut ast_map)?;
+    build_graph(&ast, &mut graph, &mut ast_map)?;
     Ok(graph)
 }
