@@ -59,6 +59,9 @@ void test3() {
     while (b) {
       for (c; d; e) {
         f;
+        if (g) {
+          break;
+        }
       }
     }
   }
