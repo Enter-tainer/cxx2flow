@@ -230,3 +230,126 @@ int main() {
   }
   drop_list(s);
 }
+
+mint mul(const mint* a, const mint* b) {
+  const mint* c = a;
+  if (a->len > b->len)
+    a = b, b = c;
+  mint t;
+  memset(&t, 0, sizeof(t));
+  t.len = 1;
+  for (int i = 0; i < a->len; i++) {
+    for (int j = 0; j < b->len; ++j) {
+      t.d[i + j] += a->d[i] * b->d[j];
+    }
+    for (int j = 0; j < t.len; ++j) {
+      if (t.d[j] >= 10) {
+        int c = t.d[j] / 10;
+        t.d[j] %= 10;
+        t.d[j + 1] += c;
+        if (j == t.len - 1)
+          ++t.len;
+      }
+    }
+  }
+  for (int j = 0; j < t.len; ++j) {
+    if (t.d[j] >= 10) {
+      int c = t.d[j] / 10;
+      t.d[j] %= 10;
+      t.d[j + 1] += c;
+      if (j == t.len - 1)
+        ++t.len;
+    }
+  }
+  for (int i = 499; i >= 1; --i) {
+    if (t.d[i]) {
+      t.len = 1 + i;
+      break;
+    }
+  }
+  return t;
+}
+
+token_result_t parse_num(sds source_code, int ptr, int line, int column, int *skips) {
+    int v_int = 0;
+    double v_double = 0;
+    bool is_double = false, is_long_lit = false;
+    int len = sdslen(source_code);
+    int i = ptr, double_cnt = -1;
+    int base = 10;
+    if (source_code[i] == '0') {
+        if (i + 1 < len) {
+            if (tolower(source_code[i + 1]) == 'x') {
+                base = 16;
+                i += 2;
+            } else if (source_code[i + 1] == '.' || is_valid_symbol_to_end_identifier(source_code[i + 1])) {
+
+            } else if (isdigit(source_code[i + 1])) {
+                base = 8;
+                i++;
+            } else {
+                sds msg = sdscatprintf(sdsempty() ,"expecting hex or oct lit, but get '%c'", source_code[i + 1]);
+                return err_token(msg);
+            }
+        }
+    }
+
+    for (; i < len; ++i) {
+        bool valid = false;
+        if (base == 10) {
+            valid = isdigit(source_code[i]);
+        } else if (base == 8) {
+            valid = isoctdigit(source_code[i]);
+        } else {
+            valid = ishexdigit(source_code[i]);
+        }
+        if (valid) {
+            if (is_double) {
+                v_double += pow(base, double_cnt--) * (char2int(source_code[i]));
+            } else {
+                v_int *= base;
+                v_int += char2int(source_code[i]);
+            }
+        } else {
+            if (source_code[i] == '.') {
+                if (base == 8 || base == 16) {
+                    sds msg = sdscatprintf(sdsempty(), "float in oct and hex is not supported");
+                    return err_token(msg);
+                }
+                is_double = true;
+                v_double = v_int;
+            } else if (isblank(source_code[i]) || source_code[i] == 0 || is_valid_symbol_to_end_identifier(source_code[i])) {
+                break;
+            } else if (source_code[i] == 'L') {
+                if (is_double) {
+                    sds msg = sdscatprintf(sdsempty(), "unexpected 'L'");
+                } else {
+                    is_long_lit = true;
+                }
+            } else {
+                sds err_msg = sdscatprintf(sdsempty(), "unexpected '%c', at line %d, column %d", source_code[i], line,
+                                           column);
+                *skips = i - ptr;
+                return err_token(err_msg);
+            }
+        }
+    }
+    *skips = i - ptr;
+    if (is_double) {
+        struct Token res = {
+                .column_num = column,
+                .line_num = line,
+                .type = FloatLit,
+                .v.f = v_double,
+        };
+        return ok_token(res);
+    } else {
+        struct Token res = {
+                .column_num = column,
+                .line_num = line,
+                .type = is_long_lit ? LongLit: IntLit,
+                .v.v = v_int,
+        };
+        return ok_token(res);
+    }
+}
