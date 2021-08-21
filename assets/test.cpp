@@ -25,11 +25,20 @@ void pre() {  //准备工作，初始化
   }
 }
 
+void test0() {
+  while (c) {
+    d;
+    if (e) {
+      continue;
+    }
+  }
+}
+
 void test1 {
   while (a) {
     while (b) {
-      while (c) {
-        d;
+      if (f) {
+        break;
       }
     }
   }
@@ -58,12 +67,6 @@ void test4() {
   while (g) {
     if (h) {
       if(i) {
-        for (r; s; t) {
-          u;
-          if (v) {
-            continue;
-          }
-        }
         if (j) {
 
         } else {
@@ -89,6 +92,33 @@ void test5() {
     }
   }
 
+}
+
+void test6() {
+  if (c) {
+  } else 
+    for (r; s; t) {
+    u;
+    if (a) {
+      break;
+    }
+    if (v) {
+      continue;
+    }
+  }
+}
+
+void test7() {
+  if (a)
+    b;
+  else if (c)
+    d;
+  else while (e)
+    for (f; g; h)
+      do 
+        if (i)
+          continue;
+      while(j);
 }
 
 int main() {

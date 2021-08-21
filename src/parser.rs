@@ -134,6 +134,20 @@ fn parse_stat(
             }
             Ok(vec)
         }
+        "for_statement" => {
+            let mut vec: Vec<Rc<RefCell<Ast>>> = Vec::new();
+            let node = parse_for_stat(id, stat, fa.clone(), content);
+            if let Ok(node) = node {
+                for i in node {
+                    vec.push(i);
+                }
+            } else if let Err(msg) = node {
+                if msg.to_string() != "garbage token" {
+                    return Err(msg);
+                }
+            }
+            Ok(vec)
+        }
         _ => {
             let res = parse_single_stat(id, stat, content);
             if let Ok(res) = res {
@@ -289,6 +303,7 @@ fn parse_for_stat(
         res_vec.push(Rc::new(RefCell::new(Ast::new(id, AstNode::Stat(init_str)))));
     }
     res.borrow_mut().node = AstNode::While(cond_str, body);
+    res.borrow_mut().is_for = true;
     res_vec.push(res);
     for i in &res_vec {
         i.borrow_mut().fa = fa.as_ref().map(|fa| Rc::downgrade(fa));
