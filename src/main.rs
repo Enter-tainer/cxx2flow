@@ -7,7 +7,7 @@ mod parser;
 
 fn main() -> anyhow::Result<()> {
     let matches = clap_app!(cxx2flow =>
-        (version: "0.1.6")
+        (version: "0.2.0")
         (author: "mgt. <mgt@oi-wiki.org>")
         (about: "Convert your C/C++ code to control flow chart")
         (@arg OUTPUT: -o --output +takes_value "Sets the output file.
