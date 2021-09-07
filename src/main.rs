@@ -2,6 +2,7 @@
 extern crate clap;
 mod ast;
 mod dot;
+mod tikz;
 mod graph;
 mod parser;
 
