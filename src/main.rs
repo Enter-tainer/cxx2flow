@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate clap;
 mod ast;
-// mod dot;
-// mod graph;
+mod dot;
+mod graph;
 mod parser;
-// mod tikz;
+mod tikz;
 mod dump;
 mod error;
 use crate::error::Result;
@@ -38,19 +38,19 @@ If specified, output flow chart will have curly connection line."))]
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let (ast_vec, maxid) = parser::parse(&args.input, Some(args.function))?;
-    dbg!(&ast_vec);
-    // let graph = graph::from_ast(ast_vec, maxid)?;
-    // dbg!(&graph);
-    // let res = if tikz {
-    //     tikz::from_graph(&graph, curved)
-    // } else {
-    //     dot::from_graph(&graph, curved)
-    // }?;
-    // if let Some(output) = output {
-        // std::fs::write(output, res)?;
-    // } else {
-        // print!("{}", res);
-    // }
+    let (ast, maxid) = parser::parse(&args.input, Some(args.function))?;
+    dbg!(&ast);
+    let graph = graph::from_ast(ast)?;
+    dbg!(&graph);
+    let res = if args.tikz {
+        tikz::from_graph(&graph, args.curly)
+    } else {
+        dot::from_graph(&graph, args.curly)
+    }?;
+    if let Some(output) = args.output {
+        std::fs::write(output, res)?;
+    } else {
+        print!("{}", res);
+    }
     Ok(())
 }
