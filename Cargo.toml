@@ -2,7 +2,8 @@
 name = "cxx2flow"
 version = "0.3.0"
 edition = "2018"
-description = "Convert your C/C++ code to control flow graph"
+authors = ["mgt <mgt@oi-wiki.org>"] 
+description = "Convert your C/C++ code to control flow chart"
 license = "MIT"
 repository = "https://github.com/Enter-tainer/cxx2flow"
 
@@ -11,10 +12,10 @@ repository = "https://github.com/Enter-tainer/cxx2flow"
 [dependencies]
 thiserror = "1.0"
 # failure = "0.1"
-clap = "2.33.3"
+clap = { version = "3.0.0-rc.9", features = ["derive", "wrap_help"] }
 log = "0.4.14"
 tree-sitter = "0.20.0"
 tree-sitter-cpp = "0.20.0"
-
+petgraph = "0.6.0"
 [profile.release]
 lto = "fat"

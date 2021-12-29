@@ -8,33 +8,37 @@ mod parser;
 mod dump;
 mod error;
 use crate::error::Result;
+use clap::Parser;
 
-fn main() -> Result<()> {
-    let matches = clap_app!(cxx2flow =>
-        (version: "0.3.0")
-        (author: "mgt. <mgt@oi-wiki.org>")
-        (about: "Convert your C/C++ code to control flow chart")
-        (@arg OUTPUT: -o --output +takes_value "Sets the output file.
-If not specified, result will be directed to stdout.
-e.g. graph.dot")
-        (@arg curved: -c --curved "Sets the style of the flow chart.
-If specified, output flow chart will have curved connection line.")
-        (@arg tikz: -t --tikz "Use tikz backend.")
-        (@arg INPUT: +required "Sets the input file. e.g. test.cpp")
-        (@arg FUNCTION: "The function you want to convert. e.g. main")
-    )
-    .after_help("Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
+#[derive(Parser, Debug)]
+#[clap(about, version, author, after_help("Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
+
 EXAMPLES:
     cxx2flow test.cpp | dot -Tpng -o test.png
-    cxx2flow main.cpp my_custom_func | dot -Tsvg -o test.svg")
-    .setting(clap::AppSettings::ColoredHelp)
-    .get_matches();
-    let path = matches.value_of("INPUT").unwrap();
-    let func = matches.value_of("FUNCTION").map(|x| x.to_string());
-    let output = matches.value_of("OUTPUT");
-    let curved = matches.is_present("curved");
-    let tikz = matches.is_present("tikz");
-    let (ast_vec, maxid) = parser::parse(path, func)?;
+    cxx2flow main.cpp my_custom_func | dot -Tsvg -o test.svg"))]
+struct Args {
+    #[clap(short, long, help("Sets the output file.
+If not specified, result will be directed to stdout.
+e.g. graph.dot"))]
+    output: Option<String>,
+    
+    #[clap(short, long, help("Sets the style of the flow chart.
+If specified, output flow chart will have curly connection line."))]
+    curly: bool,
+    
+    #[clap(short, long, help("Use tikz backend."))]
+    tikz: bool,
+    
+    #[clap(required(true), help("Sets the input file. e.g. test.cpp"))]
+    input: String,
+    
+    #[clap(default_value("main"), help("The function you want to convert. e.g. main"))]
+    function: String,
+}
+
+fn main() -> Result<()> {
+    let args = Args::parse();
+    let (ast_vec, maxid) = parser::parse(&args.input, Some(args.function))?;
     dbg!(&ast_vec);
     // let graph = graph::from_ast(ast_vec, maxid)?;
     // dbg!(&graph);
