@@ -11,7 +11,6 @@ repository = "https://github.com/Enter-tainer/cxx2flow"
 
 [dependencies]
 thiserror = "1.0"
-# failure = "0.1"
 clap = { version = "3.0.0-rc.9", features = ["derive", "wrap_help"] }
 log = "0.4.14"
 tree-sitter = "0.20.0"
