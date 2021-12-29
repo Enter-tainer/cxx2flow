@@ -1,12 +1,15 @@
 #[macro_use]
 extern crate clap;
 mod ast;
-mod dot;
-mod graph;
+// mod dot;
+// mod graph;
 mod parser;
-mod tikz;
+// mod tikz;
+mod dump;
+mod error;
+use crate::error::Result;
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<()> {
     let matches = clap_app!(cxx2flow =>
         (version: "0.3.0")
         (author: "mgt. <mgt@oi-wiki.org>")
@@ -32,18 +35,18 @@ EXAMPLES:
     let curved = matches.is_present("curved");
     let tikz = matches.is_present("tikz");
     let (ast_vec, maxid) = parser::parse(path, func)?;
-    // dbg!(&ast_vec);
-    let graph = graph::from_ast(ast_vec, maxid)?;
+    dbg!(&ast_vec);
+    // let graph = graph::from_ast(ast_vec, maxid)?;
     // dbg!(&graph);
-    let res = if tikz {
-        tikz::from_graph(&graph, curved)
-    } else {
-        dot::from_graph(&graph, curved)
-    }?;
-    if let Some(output) = output {
-        std::fs::write(output, res)?;
-    } else {
-        print!("{}", res);
-    }
+    // let res = if tikz {
+    //     tikz::from_graph(&graph, curved)
+    // } else {
+    //     dot::from_graph(&graph, curved)
+    // }?;
+    // if let Some(output) = output {
+        // std::fs::write(output, res)?;
+    // } else {
+        // print!("{}", res);
+    // }
     Ok(())
 }

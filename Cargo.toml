@@ -9,7 +9,8 @@ repository = "https://github.com/Enter-tainer/cxx2flow"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.42"
+thiserror = "1.0"
+# failure = "0.1"
 clap = "2.33.3"
 log = "0.4.14"
 tree-sitter = "0.20.0"
