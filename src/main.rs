@@ -1,5 +1,3 @@
-#[macro_use]
-extern crate clap;
 mod ast;
 mod dot;
 mod graph;

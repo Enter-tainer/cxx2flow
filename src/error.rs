@@ -10,7 +10,15 @@ pub enum Error {
   #[error("{0} not found")]
   NotFound(&'static str),
   #[error("garbage token {0}")]
-  GarbageToken(&'static str)
+  GarbageToken(&'static str),
+  #[error("unexpected continue")]
+  UnexpectedContinue,
+  #[error("unexpected break")]
+  UnexpectedBreak,
+  #[error("unexpected dummy graph node")]
+  UnexpectedDummyGraphNode,
+  #[error("unexpected dummy ast node")]
+  UnexpectedDummyAstNode,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

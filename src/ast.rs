@@ -49,7 +49,7 @@ pub enum AstNode {
 }
 #[derive(Debug)]
 pub struct Ast {
-    pub id: usize,
+    pub id: usize, // TODO: can be removed?
     pub node: AstNode,
     pub label: Option<Vec<String>>,
     pub fa: Option<Weak<RefCell<Ast>>>,

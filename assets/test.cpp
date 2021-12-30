@@ -9,7 +9,6 @@ inline int read() {  //快读
   while (c < '0' || c > '9') {
     if (c == '-') f = -1;
     c = getchar();
-    return;
   }
   while (c >= '0' && c <= '9') {
     x = x * 10 + c - '0';
@@ -122,6 +121,17 @@ void test7() {
         if (i)
           continue;
       while(j);
+}
+
+void test8() {
+l1 : l2: switch (c) {
+  case 0:
+    goto l1;
+    break;
+    case 1:
+    default:
+      d;
+  }
 }
 
 int main() {

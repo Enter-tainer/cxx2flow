@@ -189,7 +189,7 @@ fn parse_stat(id: &mut usize, stat: Node, content: &[u8]) -> Result<Rc<RefCell<A
                 return Ok(res);
             }
             if let Err(msg) = res {
-                if matches!(msg, Error::GarbageToken(_)) {
+                if !matches!(msg, Error::GarbageToken(_)) {
                     return Err(msg);
                 } else {
                     return Ok(Rc::new(RefCell::new(Ast::new(id, AstNode::Dummy, None))));
@@ -286,7 +286,6 @@ fn get_case_child_and_label<'a>(
     mut case_stat: tree_sitter::TreeCursor<'a>,
     content: &[u8],
 ) -> (Option<TreeCursor<'a>>, String) {
-    dump_node(&case_stat.node(), Some("case"));
 
     let label = String::from(if case_stat.node().child(0).unwrap().kind() == "case" {
         case_stat
@@ -329,7 +328,6 @@ fn parse_switch_stat(
     let mut vec_stat = Vec::new();
     let mut vec_label = Vec::new();
     let mut cursor = body.walk();
-    dump_node(&body, Some("body"));
     cursor.goto_first_child(); // brace
     cursor.goto_next_sibling(); // case statement
                                 // dbg!(cursor.node());
@@ -340,14 +338,13 @@ fn parse_switch_stat(
             let mut cursor = child;
             let first_idx = vec_stat.len();
             loop {
-                dump_node(&cursor.node(), Some("parsing stat"));
                 let stat = parse_stat(id, cursor.node(), content)?;
                 vec_stat.push(stat);
                 if !cursor.goto_next_sibling() {
                     break;
                 }
             }
-            vec_stat[first_idx].borrow_mut().label = Some(vec_label.drain(0..).collect());
+            vec_stat[first_idx].borrow_mut().label = Some(vec_label.clone());
         }
         if !cursor.goto_next_sibling() {
             break;

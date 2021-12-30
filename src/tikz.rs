@@ -1,6 +1,6 @@
 use petgraph::visit::{EdgeRef, IntoEdgeReferences, IntoNodeReferences};
 
-use crate::error::Result;
+use crate::error::{Result, Error};
 use crate::graph::{Graph, GraphNodeType};
 
 pub fn from_graph(graph: &Graph, _curved: bool) -> Result<String> {
@@ -61,7 +61,7 @@ pub fn from_graph(graph: &Graph, _curved: bool) -> Result<String> {
                 .replace('\n', " ")
                 .as_str(),
             ),
-            GraphNodeType::Dummy => unreachable!(),
+            GraphNodeType::Dummy => return Err(Error::UnexpectedDummyGraphNode),
             // all dummy node will be eliminated
         }
     }

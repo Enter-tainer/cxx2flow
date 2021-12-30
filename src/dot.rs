@@ -41,7 +41,8 @@ pub fn from_graph(graph: &Graph, curved: bool) -> Result<String> {
                 )
                 .as_str(),
             ),
-            GraphNodeType::Dummy => unreachable!(),
+            // GraphNodeType::Dummy => return Err(Error::UnexpectedDummyGraphNode),
+            GraphNodeType::Dummy => {}
             // all dummy node will be eliminated
         }
     }
@@ -56,11 +57,12 @@ pub fn from_graph(graph: &Graph, curved: bool) -> Result<String> {
                     "D{}:s -> D{}:n [xlabel={}];\n",
                     i.source().index(),
                     i.target().index(),
-                    if *t { "Y" } else { "F" }
+                    if *t { "Y" } else { "N" }
                 )
                 .as_str(),
             ),
         };
     }
+    res.push('}');
     Ok(res)
 }
