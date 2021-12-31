@@ -3,6 +3,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
+// TODO: remove Rc RefCell and Weak
 #[derive(Debug)]
 pub enum AstNode {
     Dummy,
@@ -21,12 +22,12 @@ pub enum AstNode {
         body: Rc<RefCell<Ast>>,
         otherwise: Option<Rc<RefCell<Ast>>>,
     },
-    // Conditon, Children1, Children2
+    // Condition, Children1, Children2
     While {
         cond: String,
         body: Rc<RefCell<Ast>>,
     },
-    // Condtion, Children
+    // Condition, Children
     DoWhile {
         cond: String,
         body: Rc<RefCell<Ast>>,

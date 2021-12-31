@@ -1,11 +1,11 @@
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::graph::{Graph, GraphNodeType};
 use petgraph::{
     visit::IntoNodeReferences,
     visit::{EdgeRef, IntoEdgeReferences},
 };
 pub fn from_graph(graph: &Graph, curved: bool) -> Result<String> {
-    let mut res = "digraph { \n concentrate=true; \n".to_string();
+    let mut res = "digraph {\n".to_string();
     if !curved {
         res.push_str("graph [splines=polyline];\n");
     }

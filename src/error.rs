@@ -1,3 +1,4 @@
+use petgraph::graph::NodeIndex;
 use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum Error {
@@ -12,13 +13,15 @@ pub enum Error {
   #[error("garbage token {0}")]
   GarbageToken(&'static str),
   #[error("unexpected continue")]
-  UnexpectedContinue,
+  UnexpectedContinue, // TODO: 尝试未来把行号塞进去？
   #[error("unexpected break")]
   UnexpectedBreak,
   #[error("unexpected dummy graph node")]
   UnexpectedDummyGraphNode,
   #[error("unexpected dummy ast node")]
   UnexpectedDummyAstNode,
+  #[error("unexpected outgoing nodes {node_index:?} : {neighbors:?}")]
+  UnexpectedOutgoingNodes{node_index: NodeIndex, neighbors: Vec<NodeIndex>}
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

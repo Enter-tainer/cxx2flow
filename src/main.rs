@@ -36,10 +36,10 @@ If specified, output flow chart will have curly connection line."))]
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let (ast, maxid) = parser::parse(&args.input, Some(args.function))?;
-    dbg!(&ast);
+    let ast = parser::parse(&args.input, Some(args.function))?;
+    // dbg!(&ast);
     let graph = graph::from_ast(ast)?;
-    dbg!(&graph);
+    // dbg!(&graph);
     let res = if args.tikz {
         tikz::from_graph(&graph, args.curly)
     } else {

@@ -1,11 +1,13 @@
-use crate::ast::{filter_id, Ast, AstNode};
+use crate::ast::{Ast, AstNode};
 use crate::error::{Error, Result};
 use itertools::Itertools;
 use petgraph::stable_graph::{NodeIndex, StableDiGraph};
+use petgraph::visit::{EdgeRef, IntoNodeReferences};
+use petgraph::EdgeDirection;
 use std::collections::HashMap;
 use std::{cell::RefCell, rc::Rc};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum GraphNodeType {
     Dummy, // dummy nodes will be removed eventually
     Begin,
@@ -14,7 +16,7 @@ pub enum GraphNodeType {
     Choice(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum EdgeType {
     Normal,
     Branch(bool),
@@ -65,16 +67,23 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
             context
                 .graph
                 .add_edge(local_source, sub_source, EdgeType::Normal);
-            for i in v.iter().with_position() {
-                context.local_source = sub_source;
-                context.local_sink = sub_sink;
-                build_graph(&i.into_inner().borrow(), context)?;
-                match i {
-                    itertools::Position::First(_) | itertools::Position::Middle(_) => {
-                        sub_source = sub_sink;
-                        sub_sink = context.graph.add_node(GraphNodeType::Dummy);
+            // what if v.is_empty()??
+            if v.is_empty() {
+                context
+                    .graph
+                    .add_edge(sub_source, sub_sink, EdgeType::Normal);
+            } else {
+                for i in v.iter().with_position() {
+                    context.local_source = sub_source;
+                    context.local_sink = sub_sink;
+                    build_graph(&i.into_inner().borrow(), context)?;
+                    match i {
+                        itertools::Position::First(_) | itertools::Position::Middle(_) => {
+                            sub_source = sub_sink;
+                            sub_sink = context.graph.add_node(GraphNodeType::Dummy);
+                        }
+                        _ => {}
                     }
-                    _ => {},
                 }
             }
             context
@@ -156,7 +165,9 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
 
             if let Some(t) = otherwise {
                 let sub_source1 = context.graph.add_node(GraphNodeType::Dummy);
-                context.graph.add_edge(cond, sub_source1, EdgeType::Branch(false));
+                context
+                    .graph
+                    .add_edge(cond, sub_source1, EdgeType::Branch(false));
                 context.local_source = sub_source1;
                 context.local_sink = sub_sink;
                 build_graph(&t.borrow(), context)?;
@@ -270,8 +281,70 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
     Ok(())
 }
 
+fn remove_zero_in_degree_nodes(graph: &mut Graph) -> bool {
+    let nodes = graph
+        .node_indices()
+        .filter(|i| -> bool {
+            *graph.node_weight(*i).unwrap() == GraphNodeType::Dummy
+                && graph.edges_directed(*i, EdgeDirection::Incoming).count() == 0
+        })
+        .collect_vec();
+    nodes
+        .iter()
+        .map(|x| graph.remove_node(*x))
+        .any(|x| x.is_some())
+}
+
+// remove the first node which predicate(node) == True
+// return Ok(true) if successfully remove a node
+// return Ok(false) if no node is avaliable
+// return Err if there are more than one predecessors
+fn remove_single_node<F>(graph: &mut Graph, predicate: F) -> Result<bool>
+where
+    F: Fn(NodeIndex, &GraphNodeType) -> bool,
+{
+    // take first dummy node
+    if let Some(node_index) = graph
+        .node_references()
+        .filter(|(x, t)| predicate(*x, *t))
+        .map(|(x, _)| x)
+        .take(1)
+        .next()
+    {
+        let incoming_edges = graph
+            .edges_directed(node_index, EdgeDirection::Incoming)
+            .map(|x| (x.source(), *x.weight()))
+            .collect_vec();
+        let neighbors = graph
+            .neighbors_directed(node_index, EdgeDirection::Outgoing)
+            .collect_vec();
+        if neighbors.len() != 1 {
+            return Err(Error::UnexpectedOutgoingNodes {
+                node_index,
+                neighbors,
+            });
+        }
+        let next_node = neighbors[0];
+        for (src, edge_type) in incoming_edges {
+            // add edge: i.src -> next_node
+            graph.add_edge(src, next_node, edge_type);
+        }
+        graph.remove_node(node_index);
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
 pub fn from_ast(ast: Rc<RefCell<Ast>>) -> Result<Graph> {
     let mut ctx = GraphContext::new();
     build_graph(&ast.borrow(), &mut ctx)?;
+    while remove_zero_in_degree_nodes(&mut ctx.graph) {}
+    while remove_single_node(&mut ctx.graph, |_, t| *t == GraphNodeType::Dummy)? {}
+    let remove_empty_nodes: fn(NodeIndex, &GraphNodeType) -> bool = |_, t| match t {
+        GraphNodeType::Node(t) => t.is_empty(),
+        _ => false,
+    };
+    while remove_single_node(&mut ctx.graph, remove_empty_nodes)? {}
     Ok(ctx.graph)
 }

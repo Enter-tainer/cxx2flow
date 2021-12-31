@@ -28,7 +28,7 @@ fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
     None
 }
 
-pub fn parse(path: &str, function_name: Option<String>) -> Result<(Rc<RefCell<Ast>>, usize)> {
+pub fn parse(path: &str, function_name: Option<String>) -> Result<Rc<RefCell<Ast>>> {
     let mut parser = Parser::new();
     let language = tree_sitter_cpp::language();
     parser.set_language(language)?;
@@ -68,7 +68,7 @@ pub fn parse(path: &str, function_name: Option<String>) -> Result<(Rc<RefCell<As
         let res = parse_stat(&mut id, stats, &content)?;
         remove_dummy(res.clone());
         set_links(res.clone(), None);
-        return Ok((res, id));
+        return Ok(res);
     }
     Err(Error::NotFound("target function"))
 }
