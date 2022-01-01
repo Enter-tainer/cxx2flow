@@ -143,10 +143,31 @@ void test9() {
   case 3:
     c + d;
   case 4:
-    d;
+    switch (f) {
+    case 1:
+      l;
+      break;
+    case 7:
+      t;
+    }
     break;
   default:
     e;
+  }
+}
+
+void test10() {
+  switch (a) {
+  case 1:
+    switch (b) {
+      case 1:
+      break;
+      default:
+        break;
+      }
+      break;
+  default:
+    break;
   }
 }
 

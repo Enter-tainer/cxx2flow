@@ -61,13 +61,13 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
     let break_target = context.break_target;
     let continue_target = context.continue_target;
     if let Some(labels) = &ast.label {
-        context.goto_target.new_child();
         for i in labels {
             if let Some(v) = context.goto_target.get(i) {
                 context.graph.add_edge(*v, local_source, EdgeType::Normal);
             } else {
                 let v = context.graph.add_node(GraphNodeType::Dummy);
-                context.goto_target.insert(i.clone(), v);
+                context.goto_target.insert_at(0, i.clone(), v).unwrap();
+                // 0 is the global hashmap, goto labels should be put in hashmap 0
                 context.graph.add_edge(v, local_source, EdgeType::Normal);
             }
         }
@@ -325,7 +325,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
             context.local_sink = local_sink;
             context.break_target = break_target;
             context.continue_target = continue_target;
-            // context.goto_target.remove_child();
+            context.goto_target.remove_child();
         }
         AstNode::Goto(t) => {
             // local_source -> goto_target
@@ -356,39 +356,31 @@ where
 {
     if let Some(i) = iter.next() {
         // dbg!(i);
-        if i.into_inner() != "default" {
-            let cur = graph.add_node(GraphNodeType::Choice(format!(
-                "{} == {}",
-                cond,
-                i.into_inner()
-            )));
-            graph.add_edge(
-                cur,
-                case_goto_targets[i.into_inner()],
-                EdgeType::Branch(true),
-            );
-            match i {
-                itertools::Position::First(_) | itertools::Position::Middle(_) => {
-                    let idx = generate_jump_table(
-                        cond,
-                        graph,
-                        iter,
-                        case_goto_targets,
-                        has_default,
-                        sink,
-                    );
-                    graph.add_edge(cur, idx, EdgeType::Branch(false));
+        let cur = graph.add_node(GraphNodeType::Choice(format!(
+            "{} == {}",
+            cond,
+            i.into_inner()
+        )));
+        graph.add_edge(
+            cur,
+            case_goto_targets[i.into_inner()],
+            EdgeType::Branch(true),
+        );
+        match i {
+            itertools::Position::First(_) | itertools::Position::Middle(_) => {
+                let idx =
+                    generate_jump_table(cond, graph, iter, case_goto_targets, has_default, sink);
+                graph.add_edge(cur, idx, EdgeType::Branch(false));
+            }
+            itertools::Position::Last(_) | itertools::Position::Only(_) => {
+                if *has_default {
+                    graph.add_edge(cur, case_goto_targets["default"], EdgeType::Branch(false));
+                } else {
+                    graph.add_edge(cur, *sink, EdgeType::Branch(false));
                 }
-                itertools::Position::Last(_) | itertools::Position::Only(_) => {
-                    if *has_default {
-                        graph.add_edge(cur, case_goto_targets["default"], EdgeType::Branch(false));
-                    } else {
-                        graph.add_edge(cur, *sink, EdgeType::Branch(false));
-                    }
-                }
-            };
-            return cur;
-        }
+            }
+        };
+        return cur;
     }
     unreachable!();
 }
@@ -451,7 +443,7 @@ where
 pub fn from_ast(ast: Rc<RefCell<Ast>>) -> Result<Graph> {
     let mut ctx = GraphContext::new();
     build_graph(&ast.borrow(), &mut ctx)?;
-    // dbg!(Dot::new(&ctx.graph));
+    // dbg!(petgraph::dot::Dot::new(&ctx.graph));
     while remove_zero_in_degree_nodes(&mut ctx.graph) {}
     while remove_single_node(&mut ctx.graph, |_, t| *t == GraphNodeType::Dummy)? {}
     let remove_empty_nodes: fn(NodeIndex, &GraphNodeType) -> bool = |_, t| match t {
