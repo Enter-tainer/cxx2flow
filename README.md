@@ -12,6 +12,21 @@
 |折线|平滑|
 |![ployline](assets/polyline.svg)|![curve](assets/curve.svg)|
 
+```cpp
+inline int read() {  //快读
+  char c = getchar();
+  int x = 0, f = 1;
+  while (c < '0' || c > '9') {
+    if (c == '-') f = -1;
+    c = getchar();
+  }
+  while (c >= '0' && c <= '9') {
+    x = x * 10 + c - '0';
+    c = getchar();
+  }
+  return x * f;
+}
+```
 
 ## 安装
 
