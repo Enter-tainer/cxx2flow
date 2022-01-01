@@ -3,9 +3,21 @@ on: [push]
 name: CI build
 
 jobs:
-  windows:
-    name: Windows build
-    runs-on: windows-latest
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: cxx2flow
+            asset_name: cxx2flow-linux-amd64
+          - os: windows-latest
+            artifact_name: cxx2flow.exe
+            asset_name: cxx2flow-windows-amd64
+          - os: macos-latest
+            artifact_name: cxx2flow
+            asset_name: cxx2flow-macos-amd64
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/cargo@v1
@@ -16,16 +28,12 @@ jobs:
         with:
           name: cxx2flow.exe
           path: target/release/cxx2flow.exe
-  linux:
-    name: Linux build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/cargo@v1
+      - name: Release
+        uses: svenstaro/upload-release-action@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          command: build
-          args: --release
-      - uses: actions/upload-artifact@v2
-        with:
-          name: cxx2flow
-          path: target/release/cxx2flow
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          tag: ${{ github.ref }}
+          
