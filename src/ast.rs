@@ -90,7 +90,9 @@ pub fn filter_id(node: Rc<RefCell<Ast>>, id: usize) -> Option<Rc<RefCell<Ast>>> 
         | AstNode::Break(_)
         | AstNode::Return(_)
         | AstNode::Goto(_) => None,
-        AstNode::If { body, otherwise, .. } => {
+        AstNode::If {
+            body, otherwise, ..
+        } => {
             let b1 = filter_id(body.clone(), id);
             if b1.is_some() {
                 return b1;

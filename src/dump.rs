@@ -14,6 +14,6 @@ fn dump_node_internal(node: &Node, level: usize) {
 }
 
 pub fn dump_node(node: &Node, msg: Option<&str>) {
-  println!("===={}====", msg.unwrap_or_default());
-  dump_node_internal(node, 0);
+    println!("===={}====", msg.unwrap_or_default());
+    dump_node_internal(node, 0);
 }

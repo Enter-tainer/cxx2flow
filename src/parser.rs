@@ -3,11 +3,8 @@ use std::{
     rc::{Rc, Weak},
 };
 
+use crate::ast::{Ast, AstNode};
 use crate::error::{Error, Result};
-use crate::{
-    ast::{Ast, AstNode},
-    dump::dump_node,
-};
 use tree_sitter::{Node, Parser, TreeCursor};
 
 fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
@@ -28,11 +25,10 @@ fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
     None
 }
 
-pub fn parse(path: &str, function_name: Option<String>) -> Result<Rc<RefCell<Ast>>> {
+pub fn parse(content: &[u8], function_name: Option<String>) -> Result<Rc<RefCell<Ast>>> {
     let mut parser = Parser::new();
     let language = tree_sitter_cpp::language();
     parser.set_language(language)?;
-    let content = std::fs::read(path)?;
     let tree = parser.parse(&content, None).unwrap();
     let mut cursor = tree.walk();
     cursor.goto_first_child();
@@ -60,12 +56,12 @@ pub fn parse(path: &str, function_name: Option<String>) -> Result<Rc<RefCell<Ast
         if func_name.is_none() {
             continue;
         }
-        let func_name = func_name.unwrap().utf8_text(&content).unwrap();
+        let func_name = func_name.unwrap().utf8_text(content).unwrap();
         if func_name != target_function {
             continue;
         }
         let mut id: usize = 0;
-        let res = parse_stat(&mut id, stats, &content)?;
+        let res = parse_stat(&mut id, stats, content)?;
         remove_dummy(res.clone());
         set_links(res.clone(), None);
         return Ok(res);
@@ -286,7 +282,6 @@ fn get_case_child_and_label<'a>(
     mut case_stat: tree_sitter::TreeCursor<'a>,
     content: &[u8],
 ) -> (Option<TreeCursor<'a>>, String) {
-
     let label = String::from(if case_stat.node().child(0).unwrap().kind() == "case" {
         case_stat
             .node()

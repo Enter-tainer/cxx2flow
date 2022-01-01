@@ -1,6 +1,6 @@
 use petgraph::visit::{EdgeRef, IntoEdgeReferences, IntoNodeReferences};
 
-use crate::error::{Result, Error};
+use crate::error::{Error, Result};
 use crate::graph::{Graph, GraphNodeType};
 
 pub fn from_graph(graph: &Graph, _curved: bool) -> Result<String> {

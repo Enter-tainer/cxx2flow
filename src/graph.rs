@@ -297,7 +297,7 @@ fn remove_zero_in_degree_nodes(graph: &mut Graph) -> bool {
 
 // remove the first node which predicate(node) == True
 // return Ok(true) if successfully remove a node
-// return Ok(false) if no node is avaliable
+// return Ok(false) if no node is available
 // return Err if there are more than one predecessors
 fn remove_single_node<F>(graph: &mut Graph, predicate: F) -> Result<bool>
 where
