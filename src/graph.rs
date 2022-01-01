@@ -335,7 +335,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
                     .add_edge(local_source, *target, EdgeType::Normal);
             } else {
                 let v = context.graph.add_node(GraphNodeType::Dummy);
-                context.goto_target.insert(t.clone(), v);
+                context.goto_target.insert_at(0, t.clone(), v).unwrap();
                 context.graph.add_edge(local_source, v, EdgeType::Normal);
             }
         }
