@@ -1,7 +1,9 @@
-use crate::{graph::{GraphNode, GraphNodeType}};
-use anyhow::Result;
+use petgraph::visit::{EdgeRef, IntoEdgeReferences, IntoNodeReferences};
 
-pub fn from_graph(graph: &[GraphNode], _curved: bool) -> Result<String> {
+use crate::error::{Error, Result};
+use crate::graph::{Graph, GraphNodeType};
+
+pub fn from_graph(graph: &Graph, _curved: bool) -> Result<String> {
     let mut res = r#"
 \documentclass[tikz,border=10pt]{standalone}
 \usepackage{ctex}
@@ -25,71 +27,70 @@ pub fn from_graph(graph: &[GraphNode], _curved: bool) -> Result<String> {
 \tikz [layered layout, sibling distance=3cm] {
   "#
     .to_string();
-    for i in graph {
-        match i.node_type {
-            GraphNodeType::Start => res.push_str(
+    for (id, i) in graph.node_references() {
+        match i {
+            GraphNodeType::Begin => res.push_str(
                 format!(
-                    "\\node[draw] (D{}) [rounded rectangle, block] {{ \\spverb${}$ }};\n",
-                    i.id, i.content.replace('%', "\\%")
+                    "\\node[draw] (D{}) [rounded rectangle, block] {{ Begin }};\n",
+                    id.index()
                 )
                 .as_str(),
             ),
             GraphNodeType::End => res.push_str(
                 format!(
-                    "\\node[draw] (D{}) [rounded rectangle, block] {{ \\spverb${}$ }};\n",
-                    i.id, i.content.replace('%', "\\%")
+                    "\\node[draw] (D{}) [rounded rectangle, block] {{ End }};\n",
+                    id.index()
                 )
                 .as_str(),
             ),
-            GraphNodeType::Node(_) => res.push_str(
-                format!("\\node[draw] (D{}) [rectangle, block] {{ \\spverb${}$ }};\n", i.id, i.content.replace('%', "\\%")).replace('\n', " ").as_str(),
+            GraphNodeType::Node(str) => res.push_str(
+                format!(
+                    "\\node[draw] (D{}) [rectangle, block] {{ \\spverb${}$ }};\n",
+                    id.index(),
+                    str.replace('%', "\\%")
+                )
+                .replace('\n', " ")
+                .as_str(),
             ),
-            GraphNodeType::Choice(_, _) => res
-                .push_str(format!("\\node[draw] (D{}) [diamond, aspect=2, block] {{ \\spverb${}$ }};\n", i.id, i.content.replace('%', "\\%")).replace('\n', " ").as_str()),
+            GraphNodeType::Choice(str) => res.push_str(
+                format!(
+                    "\\node[draw] (D{}) [diamond, aspect=2, block] {{ \\spverb${}$ }};\n",
+                    id.index(),
+                    str.replace('%', "\\%")
+                )
+                .replace('\n', " ")
+                .as_str(),
+            ),
+            GraphNodeType::Dummy => return Err(Error::UnexpectedDummyGraphNode),
+            // all dummy node will be eliminated
         }
     }
-    for i in graph {
-        match i.node_type {
-            GraphNodeType::Start => {
-                res.push_str(format!("\\draw (D{}) edge[->] (D{});\n", i.id, i.id + 1).as_str())
-            }
-            GraphNodeType::End => {
-                res.push_str(
-                    r#"
+    for i in graph.edge_references() {
+        match i.weight() {
+            crate::graph::EdgeType::Normal => res.push_str(
+                format!(
+                    "\\draw (D{}) edge[->] (D{});\n",
+                    i.source().index(),
+                    i.target().index()
+                )
+                .as_str(),
+            ),
+            crate::graph::EdgeType::Branch(t) => res.push_str(
+                format!(
+                    "\\draw (D{}) edge[->, below] node {{ {} }} (D{});\n",
+                    i.source().index(),
+                    i.target().index(),
+                    if *t { "Y" } else { "N" }
+                )
+                .as_str(),
+            ),
+        }
+    }
+    res.push_str(
+        r#"
 }
 \end{document}
   "#,
-                );
-            }
-            GraphNodeType::Node(t) => match t {
-                Some(id) => {
-                    res.push_str(format!("\\draw (D{}) edge[->, below] (D{});\n", i.id, id).as_str())
-                }
-                None => {
-                    res.push_str(format!("\\draw (D{}) edge[->] (D{});\n", i.id, i.id + 1).as_str())
-                }
-            },
-            GraphNodeType::Choice(t, f) => {
-                res.push_str(
-                    format!(
-                        "\\draw (D{}) edge[->, below] node {{ Y }} (D{});\n",
-                        i.id,
-                        t.unwrap_or(i.id + 1)
-                    )
-                    .as_str(),
-                );
-                res.push_str(
-                    format!(
-                        "\\draw (D{}) edge[->, below] node {{ N }} (D{});\n",
-                        i.id,
-                        f.unwrap()
-                    )
-                    .as_str(),
-                );
-            }
-        }
-    }
-    // \draw (a) edge[->] (b);
-
+    );
     Ok(res)
 }

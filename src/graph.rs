@@ -1,329 +1,463 @@
+use crate::ast::{Ast, AstNode};
+use crate::error::{Error, Result};
+use hash_chain::ChainMap;
+use itertools::{Itertools, Position};
+use petgraph::stable_graph::{NodeIndex, StableDiGraph};
+use petgraph::visit::{EdgeRef, IntoNodeReferences};
+use petgraph::EdgeDirection;
+use std::collections::HashMap;
 use std::{cell::RefCell, rc::Rc};
-
-use crate::ast::{filter_id, Ast, AstNode};
-use anyhow::Result;
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum GraphNodeType {
-    Start,
-    // next
+    Dummy, // dummy nodes will be removed eventually
+    Begin,
     End,
-    Node(Option<usize>),
-    // optional jump, otherwise, it is next node
-    Choice(Option<usize>, Option<usize>),
-    // true, false
+    Node(String),
+    Choice(String),
 }
 
-impl GraphNodeType {
-    fn set_jump(&mut self, target: usize) -> Result<()> {
-        if let GraphNodeType::Node(ref mut t) = self {
-            *t = Some(target);
-            Ok(())
-        } else {
-            Err(anyhow::anyhow!("cannot set jump for node \"{:?}\"", self))
-        }
-    }
-    fn set_true_branch(&mut self, target: usize) -> Result<()> {
-        if let GraphNodeType::Choice(ref mut t, _) = self {
-            *t = Some(target);
-            Ok(())
-        } else {
-            Err(anyhow::anyhow!(
-                "cannot set true branch for node \"{:?}\"",
-                self
-            ))
-        }
-    }
-    fn set_false_branch(&mut self, target: usize) -> Result<()> {
-        if let GraphNodeType::Choice(_, ref mut f) = self {
-            *f = Some(target);
-            Ok(())
-        } else {
-            Err(anyhow::anyhow!(
-                "cannot set false branch for node \"{:?}\"",
-                self
-            ))
-        }
-    }
+#[derive(Debug, Clone, Copy)]
+pub enum EdgeType {
+    Normal,
+    Branch(bool),
 }
 
-#[derive(Debug)]
-pub struct GraphNode {
-    pub id: usize,
-    pub node_type: GraphNodeType,
-    pub content: String,
+pub type Graph = StableDiGraph<GraphNodeType, EdgeType>;
+
+struct GraphContext {
+    pub graph: Graph,
+    pub break_target: Option<NodeIndex>,
+    pub continue_target: Option<NodeIndex>,
+    pub goto_target: ChainMap<String, NodeIndex>,
+    #[allow(dead_code)]
+    pub global_begin: NodeIndex,
+    pub global_end: NodeIndex,
+    pub local_source: NodeIndex,
+    pub local_sink: NodeIndex,
 }
 
-pub type Graph = Vec<GraphNode>;
-
-type AstMap = Vec<usize>;
-type GraphMap = Vec<usize>;
-fn build_ast_map_single(
-    ast: &Rc<RefCell<Ast>>,
-    graph: &mut Graph,
-    ast_map: &mut AstMap,
-    graph_map: &mut GraphMap,
-) -> Result<()> {
-    let ast_id = ast.borrow().id;
-    let id = graph.len();
-    ast_map[ast_id] = id;
-    graph_map[id] = ast_id;
-    match &ast.borrow().node {
-        AstNode::Dummy => Err(anyhow::anyhow!("unexpected dummy node")),
-        AstNode::Stat(s) | AstNode::Continue(s) | AstNode::Break(s) | AstNode::Return(s) => {
-            graph.push(GraphNode {
-                id,
-                node_type: GraphNodeType::Node(None),
-                content: s.clone(),
-            });
-            Ok(())
-        }
-        AstNode::If(cond, t, f) => {
-            graph.push(GraphNode {
-                id,
-                node_type: GraphNodeType::Choice(None, None),
-                content: cond.clone(),
-            });
-            build_ast_map_vec(t, graph, ast_map, graph_map)?;
-            build_ast_map_vec(f, graph, ast_map, graph_map)?;
-            Ok(())
-        }
-        AstNode::While(cond, body) => {
-            graph.push(GraphNode {
-                id,
-                node_type: GraphNodeType::Choice(None, None),
-                content: cond.clone(),
-            });
-            build_ast_map_vec(body, graph, ast_map, graph_map)?;
-            Ok(())
-        }
-        AstNode::DoWhile(cond, body) => {
-            graph.push(GraphNode {
-                id,
-                node_type: GraphNodeType::Choice(None, None),
-                content: cond.clone(),
-            });
-            build_ast_map_vec(body, graph, ast_map, graph_map)?;
-            Ok(())
+impl GraphContext {
+    fn new() -> GraphContext {
+        let mut graph = Graph::new();
+        let begin = graph.add_node(GraphNodeType::Begin);
+        let end = graph.add_node(GraphNodeType::End);
+        GraphContext {
+            graph,
+            break_target: None,
+            continue_target: None,
+            goto_target: ChainMap::new(HashMap::new()),
+            global_begin: begin,
+            global_end: end,
+            local_source: begin,
+            local_sink: end,
         }
     }
 }
 
-fn build_ast_map_vec(
-    ast: &[Rc<RefCell<Ast>>],
-    graph: &mut Graph,
-    ast_map: &mut AstMap,
-    graph_map: &mut GraphMap,
-) -> Result<()> {
-    for i in ast {
-        build_ast_map_single(i, graph, ast_map, graph_map)?;
-    }
-    Ok(())
-}
-
-fn build_map(
-    ast: &[Rc<RefCell<Ast>>],
-    graph: &mut Graph,
-    ast_map: &mut AstMap,
-    graph_map: &mut GraphMap,
-) -> Result<()> {
-    graph.push(GraphNode {
-        id: 0,
-        node_type: GraphNodeType::Start,
-        content: String::from("Start"),
-    });
-    build_ast_map_vec(ast, graph, ast_map, graph_map)?;
-    graph.push(GraphNode {
-        id: graph.len(),
-        node_type: GraphNodeType::End,
-        content: String::from("End"),
-    });
-    Ok(())
-}
-
-fn find_nearest_loop(ast: Rc<RefCell<Ast>>, ast_map: &mut AstMap) -> Result<Option<usize>> {
-    let mut i = Rc::downgrade(&ast);
-    loop {
-        let cur = i.upgrade().unwrap();
-        if cur.borrow().is_loop() {
-            return Ok(Some(ast_map[cur.borrow().id]));
-        }
-        match (*i.upgrade().unwrap()).borrow().fa.as_ref() {
-            Some(f) => i = f.clone(),
-            None => return Ok(None),
-        }
-    }
-}
-
-fn find_root(ast: Rc<RefCell<Ast>>) -> Rc<RefCell<Ast>> {
-    let mut i = Rc::downgrade(&ast);
-    loop {
-        match (*i.upgrade().unwrap()).borrow().fa.as_ref() {
-            Some(f) => {
-                i = f.clone();
+fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
+    // local_source -> [...current parsing...] -> local_sink
+    let local_source = context.local_source;
+    let local_sink = context.local_sink;
+    let break_target = context.break_target;
+    let continue_target = context.continue_target;
+    if let Some(labels) = &ast.label {
+        context.goto_target.new_child();
+        for i in labels {
+            if let Some(v) = context.goto_target.get(i) {
+                context.graph.add_edge(*v, local_source, EdgeType::Normal);
+            } else {
+                let v = context.graph.add_node(GraphNodeType::Dummy);
+                context.goto_target.insert(i.clone(), v);
+                context.graph.add_edge(v, local_source, EdgeType::Normal);
             }
-            None => return i.upgrade().unwrap(),
         }
     }
-}
-
-fn find_nearest_loop_break(ast: Rc<RefCell<Ast>>, ast_map: &mut AstMap) -> Result<Option<usize>> {
-    let mut i = Rc::downgrade(&ast);
-    loop {
-        let cur = i.upgrade().unwrap();
-        if cur.borrow().is_loop() {
-            return find_next_exec(cur.clone(), ast_map);
-        }
-        match (*i.upgrade().unwrap()).borrow().fa.as_ref() {
-            Some(f) => i = f.clone(),
-            None => return Ok(None),
-        }
-    }
-}
-
-fn find_next_exec(ast: Rc<RefCell<Ast>>, ast_map: &mut AstMap) -> Result<Option<usize>> {
-    // Assuming that this node has no siblings...
-    let node = ast.borrow();
-    if let Some(n) = &node.next {
-        return Ok(Some(ast_map[n.upgrade().unwrap().borrow().id]));
-    }
-    if let Some(f) = &node.fa {
-        let fa = f.upgrade().unwrap();
-        if fa.borrow().is_loop() {
-            Ok(Some(ast_map[fa.borrow().id]))
-        } else {
-            let next = find_next_exec(fa, ast_map)?;
-            Ok(next)
-        }
-    } else {
-        Ok(None)
-    }
-}
-
-fn build_graph_single(
-    ast: Rc<RefCell<Ast>>,
-    graph: &mut Graph,
-    ast_map: &mut AstMap,
-    graph_map: &mut GraphMap,
-) -> Result<()> {
-    let node = ast.borrow();
-    let id = ast_map[node.id];
-    let len = graph.len();
-    match &node.node {
-        AstNode::Dummy => Err(anyhow::anyhow!("unexpected dummy node")),
-        AstNode::Stat(_) => match node.next {
-            Some(_) => Ok(()),
-            None => {
-                let next = find_next_exec(ast.clone(), ast_map)?;
-                graph[id].node_type.set_jump(next.unwrap_or(len - 1))?;
-                Ok(())
-            }
-        },
-        AstNode::Continue(_) => {
-            let next = find_nearest_loop(ast.clone(), ast_map)?;
-            let mut jmp: usize = len - 1;
-            if let Some(next) = next {
-                let root = find_root(ast.clone());
-                let res = filter_id(root,graph_map[next]).unwrap();
-                if res.borrow().is_for {
-                    match &res.borrow().node {
-                        AstNode::While(_, b) => {
-                            jmp = ast_map[b.last().unwrap().borrow().id];
+    match &ast.node {
+        AstNode::Dummy => return Err(Error::UnexpectedDummyAstNode),
+        AstNode::Compound(v) => {
+            let mut sub_source = context.graph.add_node(GraphNodeType::Dummy);
+            let mut sub_sink = context.graph.add_node(GraphNodeType::Dummy);
+            context
+                .graph
+                .add_edge(local_source, sub_source, EdgeType::Normal);
+            // what if v.is_empty()??
+            if v.is_empty() {
+                context
+                    .graph
+                    .add_edge(sub_source, sub_sink, EdgeType::Normal);
+            } else {
+                for i in v.iter().with_position() {
+                    context.local_source = sub_source;
+                    context.local_sink = sub_sink;
+                    build_graph(&i.into_inner().borrow(), context)?;
+                    match i {
+                        itertools::Position::First(_) | itertools::Position::Middle(_) => {
+                            sub_source = sub_sink;
+                            sub_sink = context.graph.add_node(GraphNodeType::Dummy);
                         }
-                        _ => unreachable!(),
+                        _ => {}
                     }
-                } else {
-                    jmp = next;
                 }
             }
-            graph[id].node_type.set_jump(jmp)?;
-            Ok(())
+            context
+                .graph
+                .add_edge(sub_sink, local_sink, EdgeType::Normal);
+            context.local_source = local_source;
+            context.local_sink = local_sink;
         }
-        AstNode::Break(_) => {
-            let next = find_nearest_loop_break(ast.clone(), ast_map)?;
-            graph[id].node_type.set_jump(next.unwrap_or(len - 1))?;
-            Ok(())
+        AstNode::Stat(s) => {
+            // local_source -> current -> local_sink
+            let current = context.graph.add_node(GraphNodeType::Node(s.clone()));
+            context
+                .graph
+                .add_edge(local_source, current, EdgeType::Normal);
+            context
+                .graph
+                .add_edge(current, local_sink, EdgeType::Normal);
         }
-        AstNode::Return(_) => graph[id].node_type.set_jump(len - 1),
-        AstNode::If(_, b1, b2) => {
-            if !b1.is_empty() {
-                let b1_first_id = b1[0].borrow().id;
-                graph[id].node_type.set_true_branch(ast_map[b1_first_id])?;
-            } else {
-                let next = find_next_exec(ast.clone(), ast_map)?;
-                graph[id]
-                    .node_type
-                    .set_true_branch(next.unwrap_or(len - 1))?;
-            }
-            if !b2.is_empty() {
-                let b2_first_id = b2[0].borrow().id;
-                graph[id].node_type.set_false_branch(ast_map[b2_first_id])?;
-            } else {
-                let next = find_next_exec(ast.clone(), ast_map)?;
-                graph[id]
-                    .node_type
-                    .set_false_branch(next.unwrap_or(len - 1))?;
-            }
-            build_graph_vec(b1, graph, ast_map, graph_map)?;
-            build_graph_vec(b2, graph, ast_map, graph_map)?;
-            Ok(())
+        AstNode::Continue(s) => {
+            // local_source -> current -> continue_target
+            let current = context.graph.add_node(GraphNodeType::Node(s.clone()));
+            context
+                .graph
+                .add_edge(local_source, current, EdgeType::Normal);
+            context.graph.add_edge(
+                current,
+                context.continue_target.ok_or(Error::UnexpectedContinue)?,
+                EdgeType::Normal,
+            );
         }
-        AstNode::While(_, body) => {
-            if !body.is_empty() {
-                let body_first_id = body[0].borrow().id;
-                graph[id]
-                    .node_type
-                    .set_true_branch(ast_map[body_first_id])?;
-            }
-            let next = find_next_exec(ast.clone(), ast_map)?;
-            graph[id]
-                .node_type
-                .set_false_branch(next.unwrap_or(len - 1))?;
+        AstNode::Break(s) => {
+            // local_source -> current -> break_target
+            let current = context.graph.add_node(GraphNodeType::Node(s.clone()));
+            context
+                .graph
+                .add_edge(local_source, current, EdgeType::Normal);
+            context.graph.add_edge(
+                current,
+                context.break_target.ok_or(Error::UnexpectedBreak)?,
+                EdgeType::Normal,
+            );
+        }
+        AstNode::Return(s) => {
+            // local_source -> current -> global_end
+            let current = context.graph.add_node(GraphNodeType::Node(s.clone()));
+            context
+                .graph
+                .add_edge(local_source, current, EdgeType::Normal);
+            context
+                .graph
+                .add_edge(current, context.global_end, EdgeType::Normal);
+        }
+        AstNode::If {
+            cond,
+            body,
+            otherwise,
+        } => {
+            // local_source -> cond -> ---Y--> sub_source -> [...body...] -> sub_sink---------------v
+            //                         ---N--> sub_source1 -> Option<[...otherwise...]> -> sub_sink -> local_sink
+            let cond = context.graph.add_node(GraphNodeType::Choice(cond.clone()));
+            let sub_source = context.graph.add_node(GraphNodeType::Dummy);
+            let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
+            context.graph.add_edge(local_source, cond, EdgeType::Normal);
+            context
+                .graph
+                .add_edge(cond, sub_source, EdgeType::Branch(true));
+            context
+                .graph
+                .add_edge(sub_sink, local_sink, EdgeType::Normal);
+            context.local_source = sub_source;
+            context.local_sink = sub_sink;
+            // context must be restored after calling this function
+            // only graph should be changed
+            // so it is OK to process the other branch directly
+            build_graph(&body.borrow(), context)?;
+            // restore context
+            context.local_source = local_source;
+            context.local_sink = local_sink;
 
-            // set false branch: find next stat, similar to previous
-            build_graph_vec(&body, graph, ast_map, graph_map)
-        }
-        AstNode::DoWhile(_, body) => {
-            if !body.is_empty() {
-                let body_first_id = body[0].borrow().id;
-                graph[id]
-                    .node_type
-                    .set_true_branch(ast_map[body_first_id])?;
+            if let Some(t) = otherwise {
+                let sub_source1 = context.graph.add_node(GraphNodeType::Dummy);
+                context
+                    .graph
+                    .add_edge(cond, sub_source1, EdgeType::Branch(false));
+                context.local_source = sub_source1;
+                context.local_sink = sub_sink;
+                build_graph(&t.borrow(), context)?;
+                context.local_source = local_source;
+                context.local_sink = local_sink;
+            } else {
+                context
+                    .graph
+                    .add_edge(cond, local_sink, EdgeType::Branch(false));
             }
-            let next = find_nearest_loop_break(ast.clone(), ast_map)?;
-            graph[id]
-                .node_type
-                .set_false_branch(next.unwrap_or(len - 1))?;
-            build_graph_vec(&body, graph, ast_map, graph_map)
         }
-    }
-}
-
-fn build_graph_vec(
-    ast: &[Rc<RefCell<Ast>>],
-    graph: &mut Graph,
-    ast_map: &mut AstMap,
-    graph_map: &mut GraphMap,
-) -> Result<()> {
-    for i in ast {
-        build_graph_single(i.clone(), graph, ast_map, graph_map)?;
+        AstNode::While { cond, body } => {
+            // local_src -> cond ---Y--> sub_source -> [...body...] -> sub_sink
+            //                |  \                                         /
+            //                | N \_______________________________________/
+            //                v                     <<<
+            //           local_sink
+            // continue: jump to cond
+            // break: jump to local_sink
+            let cond = context.graph.add_node(GraphNodeType::Choice(cond.clone()));
+            let sub_source = context.graph.add_node(GraphNodeType::Dummy);
+            let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
+            context.graph.add_edge(local_source, cond, EdgeType::Normal);
+            context
+                .graph
+                .add_edge(cond, sub_source, EdgeType::Branch(true));
+            context
+                .graph
+                .add_edge(cond, local_sink, EdgeType::Branch(false));
+            context.graph.add_edge(sub_sink, cond, EdgeType::Normal);
+            context.continue_target = Some(cond);
+            context.break_target = Some(local_sink);
+            context.local_source = sub_source;
+            context.local_sink = sub_sink;
+            build_graph(&body.borrow(), context)?;
+            context.continue_target = continue_target;
+            context.break_target = break_target;
+            context.local_source = local_source;
+            context.local_sink = local_sink;
+        }
+        AstNode::DoWhile { cond, body } => {
+            // local_src -> sub_source -> [...body...] -> sub_sink -> cond ---N--> local_sink
+            //                    \                                    /
+            //                     <-----------------Y----------------<
+            // continue: jump to cond
+            // break: jump to local_sink
+            let sub_source = context.graph.add_node(GraphNodeType::Dummy);
+            let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
+            let cond = context.graph.add_node(GraphNodeType::Choice(cond.clone()));
+            context
+                .graph
+                .add_edge(local_source, sub_source, EdgeType::Normal);
+            context.graph.add_edge(sub_sink, cond, EdgeType::Normal);
+            context
+                .graph
+                .add_edge(cond, sub_source, EdgeType::Branch(true));
+            context
+                .graph
+                .add_edge(cond, local_sink, EdgeType::Branch(false));
+            context.continue_target = Some(cond);
+            context.break_target = Some(local_sink);
+            context.local_source = sub_source;
+            context.local_sink = sub_sink;
+            build_graph(&body.borrow(), context)?;
+            context.continue_target = continue_target;
+            context.break_target = break_target;
+            context.local_source = local_source;
+            context.local_sink = local_sink;
+        }
+        AstNode::For {
+            init,
+            cond,
+            upd,
+            body,
+        } => {
+            // local_source -> init -> cond ---Y--> sub_source -> [...body...] -> sub_sink -> upd
+            //                           |  \                                                  /
+            //                           |   \----N--> local_sink                             /
+            //                           |___________________________________________________/
+            //                                              <<<
+            // continue: jump to sub_sink
+            // break: jump to local_sink
+            let sub_source = context.graph.add_node(GraphNodeType::Dummy);
+            let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
+            let cond = context.graph.add_node(GraphNodeType::Choice(cond.clone()));
+            let init = context.graph.add_node(GraphNodeType::Node(init.clone()));
+            let upd = context.graph.add_node(GraphNodeType::Node(upd.clone()));
+            context.graph.add_edge(local_source, init, EdgeType::Normal);
+            context.graph.add_edge(init, cond, EdgeType::Normal);
+            context
+                .graph
+                .add_edge(cond, sub_source, EdgeType::Branch(true));
+            context
+                .graph
+                .add_edge(cond, local_sink, EdgeType::Branch(false));
+            context.graph.add_edge(sub_sink, upd, EdgeType::Normal);
+            context.graph.add_edge(upd, cond, EdgeType::Normal);
+            context.continue_target = Some(upd);
+            context.break_target = Some(local_sink);
+            context.local_source = sub_source;
+            context.local_sink = sub_sink;
+            build_graph(&body.borrow(), context)?;
+            context.continue_target = continue_target;
+            context.break_target = break_target;
+            context.local_source = local_source;
+            context.local_sink = local_sink;
+        }
+        AstNode::Switch { cond, body, cases } => {
+            // local_src -> cond == case[0] ---Y-> goto case[0]
+            //                              ---N-> cond == case[1] ....
+            //                                                ---N--> goto default
+            // sub_src -> [..body..] -> sub_sink -> local_sink
+            // continue: None
+            // break: local_sink
+            let case_goto_targets: HashMap<String, NodeIndex> = cases
+                .iter()
+                .map(|c| (c.clone(), context.graph.add_node(GraphNodeType::Dummy)))
+                .collect();
+            let table_start = generate_jump_table(
+                cond,
+                &mut context.graph,
+                &mut cases.iter().filter(|x| *x != "default").with_position(),
+                &case_goto_targets,
+                &cases.iter().any(|x| x == "default"),
+                &local_sink,
+            );
+            context
+                .graph
+                .add_edge(local_source, table_start, EdgeType::Normal);
+            let sub_source = context.graph.add_node(GraphNodeType::Dummy);
+            let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
+            context.goto_target.new_child_with(case_goto_targets);
+            context.local_source = sub_source;
+            context.local_sink = sub_sink;
+            context.break_target = Some(local_sink);
+            context.continue_target = None;
+            context
+                .graph
+                .add_edge(sub_sink, local_sink, EdgeType::Normal);
+            build_graph(&body.borrow(), context)?;
+            context.local_source = local_source;
+            context.local_sink = local_sink;
+            context.break_target = break_target;
+            context.continue_target = continue_target;
+            // context.goto_target.remove_child();
+        }
+        AstNode::Goto(t) => {
+            // local_source -> goto_target
+            if let Some(target) = context.goto_target.get(t) {
+                context
+                    .graph
+                    .add_edge(local_source, *target, EdgeType::Normal);
+            } else {
+                let v = context.graph.add_node(GraphNodeType::Dummy);
+                context.goto_target.insert(t.clone(), v);
+                context.graph.add_edge(local_source, v, EdgeType::Normal);
+            }
+        }
     }
     Ok(())
 }
 
-fn build_graph(
-    ast: &[Rc<RefCell<Ast>>],
+fn generate_jump_table<'a, I>(
+    cond: &str,
     graph: &mut Graph,
-    ast_map: &mut AstMap,
-    graph_map: &mut GraphMap,
-) -> Result<()> {
-    build_graph_vec(ast, graph, ast_map, graph_map)
+    iter: &mut I,
+    case_goto_targets: &HashMap<String, NodeIndex>,
+    has_default: &bool,
+    sink: &NodeIndex,
+) -> NodeIndex
+where
+    I: Itertools<Item = Position<&'a String>>,
+{
+    if let Some(i) = iter.next() {
+        // dbg!(i);
+        if i.into_inner() != "default" {
+            let cur = graph.add_node(GraphNodeType::Choice(format!(
+                "{} == {}",
+                cond,
+                i.into_inner()
+            )));
+            graph.add_edge(
+                cur,
+                case_goto_targets[i.into_inner()],
+                EdgeType::Branch(true),
+            );
+            match i {
+                itertools::Position::First(_) | itertools::Position::Middle(_) => {
+                    let idx = generate_jump_table(
+                        cond,
+                        graph,
+                        iter,
+                        case_goto_targets,
+                        has_default,
+                        sink,
+                    );
+                    graph.add_edge(cur, idx, EdgeType::Branch(false));
+                }
+                itertools::Position::Last(_) | itertools::Position::Only(_) => {
+                    if *has_default {
+                        graph.add_edge(cur, case_goto_targets["default"], EdgeType::Branch(false));
+                    } else {
+                        graph.add_edge(cur, *sink, EdgeType::Branch(false));
+                    }
+                }
+            };
+            return cur;
+        }
+    }
+    unreachable!();
 }
 
-pub fn from_ast(ast: Vec<Rc<RefCell<Ast>>>, max_id: usize) -> Result<Graph> {
-    let mut ast_map: AstMap = vec![0; max_id];
-    let mut graph_map: GraphMap = vec![0; max_id * 2];
-    let mut graph: Graph = Vec::new();
-    build_map(&ast, &mut graph, &mut ast_map, &mut graph_map)?;
-    build_graph(&ast, &mut graph, &mut ast_map, &mut graph_map)?;
-    Ok(graph)
+fn remove_zero_in_degree_nodes(graph: &mut Graph) -> bool {
+    let nodes = graph
+        .node_indices()
+        .filter(|i| -> bool {
+            *graph.node_weight(*i).unwrap() == GraphNodeType::Dummy
+                && graph.edges_directed(*i, EdgeDirection::Incoming).count() == 0
+        })
+        .collect_vec();
+    nodes
+        .iter()
+        .map(|x| graph.remove_node(*x))
+        .any(|x| x.is_some())
+}
+
+// remove the first node which predicate(node) == True
+// return Ok(true) if successfully remove a node
+// return Ok(false) if no node is available
+// return Err if there are more than one predecessors
+fn remove_single_node<F>(graph: &mut Graph, predicate: F) -> Result<bool>
+where
+    F: Fn(NodeIndex, &GraphNodeType) -> bool,
+{
+    // take first dummy node
+    if let Some(node_index) = graph
+        .node_references()
+        .filter(|(x, t)| predicate(*x, *t))
+        .map(|(x, _)| x)
+        .take(1)
+        .next()
+    {
+        let incoming_edges = graph
+            .edges_directed(node_index, EdgeDirection::Incoming)
+            .map(|x| (x.source(), *x.weight()))
+            .collect_vec();
+        let neighbors = graph
+            .neighbors_directed(node_index, EdgeDirection::Outgoing)
+            .collect_vec();
+        if neighbors.len() != 1 {
+            return Err(Error::UnexpectedOutgoingNodes {
+                node_index,
+                neighbors,
+            });
+        }
+        let next_node = neighbors[0];
+        for (src, edge_type) in incoming_edges {
+            // add edge: i.src -> next_node
+            graph.add_edge(src, next_node, edge_type);
+        }
+        graph.remove_node(node_index);
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+pub fn from_ast(ast: Rc<RefCell<Ast>>) -> Result<Graph> {
+    let mut ctx = GraphContext::new();
+    build_graph(&ast.borrow(), &mut ctx)?;
+    // dbg!(Dot::new(&ctx.graph));
+    while remove_zero_in_degree_nodes(&mut ctx.graph) {}
+    while remove_single_node(&mut ctx.graph, |_, t| *t == GraphNodeType::Dummy)? {}
+    let remove_empty_nodes: fn(NodeIndex, &GraphNodeType) -> bool = |_, t| match t {
+        GraphNodeType::Node(t) => t.is_empty(),
+        _ => false,
+    };
+    while remove_single_node(&mut ctx.graph, remove_empty_nodes)? {}
+    Ok(ctx.graph)
 }

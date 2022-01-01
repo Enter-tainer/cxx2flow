@@ -12,6 +12,21 @@
 |折线|平滑|
 |![ployline](assets/polyline.svg)|![curve](assets/curve.svg)|
 
+```cpp
+inline int read() {  //快读
+  char c = getchar();
+  int x = 0, f = 1;
+  while (c < '0' || c > '9') {
+    if (c == '-') f = -1;
+    c = getchar();
+  }
+  while (c >= '0' && c <= '9') {
+    x = x * 10 + c - '0';
+    c = getchar();
+  }
+  return x * f;
+}
+```
 
 ## 安装
 
@@ -30,30 +45,29 @@ cargo install cxx2flow
 为了编译生成的 dot 文件，你需要安装 graphviz，并将其添加到 PATH 中。也可以将生成的结果复制进在线的 graphviz 服务中，如 http://magjac.com/graphviz-visual-editor/ 。
 
 ```
-cxx2flow 0.3.0
-mgt. <mgt@oi-wiki.org>
+cxx2flow 0.4.0
+mgt <mgt@oi-wiki.org>
 Convert your C/C++ code to control flow chart
 
 USAGE:
-    cxx2flow [FLAGS] [OPTIONS] <INPUT> [FUNCTION]
-
-FLAGS:
-    -c, --curved     Sets the style of the flow chart.
-                     If specified, output flow chart will have curved connection line.
-    -h, --help       Prints help information
-    -t, --tikz       Use tikz backend.
-    -V, --version    Prints version information
-
-OPTIONS:
-    -o, --output <OUTPUT>    Sets the output file.
-                             If not specified, result will be directed to stdout.
-                             e.g. graph.dot
+    cxx2flow [OPTIONS] <INPUT> [FUNCTION]
 
 ARGS:
     <INPUT>       Sets the input file. e.g. test.cpp
-    <FUNCTION>    The function you want to convert. e.g. main
+    <FUNCTION>    The function you want to convert. e.g. main [default: main]
+
+OPTIONS:
+    -c, --curly              Sets the style of the flow chart.
+                             If specified, output flow chart will have curly connection line.
+    -h, --help               Print help information
+    -o, --output <OUTPUT>    Sets the output file.
+                             If not specified, result will be directed to stdout.
+                             e.g. graph.dot
+    -t, --tikz               Use tikz backend.
+    -V, --version            Print version information
 
 Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
+
 EXAMPLES:
     cxx2flow test.cpp | dot -Tpng -o test.png
     cxx2flow main.cpp my_custom_func | dot -Tsvg -o test.svg
@@ -61,6 +75,5 @@ EXAMPLES:
 
 ## 限制
 
-- 暂时不支持 switch, goto, do-while
 - 不支持预处理器，如 include, ifdef, ifndef...
-- 支持的控制流语句有：while，for，if，break，continue，break，return。
+- 支持的控制流语句有：while，for，if，break，continue，break，return，switch, goto, do-while。

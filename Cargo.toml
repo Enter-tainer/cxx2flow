@@ -1,19 +1,33 @@
 [package]
 name = "cxx2flow"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2018"
-description = "Convert your C/C++ code to control flow graph"
+authors = ["mgt <mgt@oi-wiki.org>"] 
+description = "Convert your C/C++ code to control flow chart"
 license = "MIT"
 repository = "https://github.com/Enter-tainer/cxx2flow"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "cxx2flow"
+path = "src/main.rs"
+
+[lib]
+name = "cxx2flow"
+path = "src/lib.rs"
+crate-type = ["lib"]
+
 [dependencies]
-anyhow = "1.0.42"
-clap = "2.33.3"
+thiserror = "1.0"
+clap = { version = "3.0.0", features = ["derive", "wrap_help"] }
 log = "0.4.14"
 tree-sitter = "0.20.0"
 tree-sitter-cpp = "0.20.0"
+petgraph = "0.6.0"
+itertools = "0.10.3"
+hash-chain = "0.3.2"
+
 
 [profile.release]
 lto = "fat"
