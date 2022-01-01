@@ -1,6 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::ast::{Ast, AstNode};
+#[allow(unused_imports)]
+use crate::dump::dump_node;
 use crate::error::{Error, Result};
 use tree_sitter::{Node, Parser, TreeCursor};
 
@@ -231,6 +233,7 @@ fn get_case_child_and_label<'a>(
     mut case_stat: tree_sitter::TreeCursor<'a>,
     content: &[u8],
 ) -> (Option<TreeCursor<'a>>, String) {
+    // dump_node(&case_stat.node(), None);
     let label = String::from(if case_stat.node().child(0).unwrap().kind() == "case" {
         case_stat
             .node()
@@ -247,18 +250,21 @@ fn get_case_child_and_label<'a>(
             .unwrap()
     });
     case_stat.goto_first_child();
-    while case_stat.node().kind() != ":" {
+    if case_stat.node().kind() == "case" {
+        // case lit :
+        case_stat.goto_next_sibling();
+        case_stat.goto_next_sibling();
+    } else if case_stat.node().kind() == "default" {
+        // default :
         case_stat.goto_next_sibling();
     }
-
-    (
-        if case_stat.goto_next_sibling() {
-            Some(case_stat)
-        } else {
-            None
-        },
-        label,
-    )
+    while [":", "comment"].contains(&case_stat.node().kind()) {
+        if !case_stat.goto_next_sibling() {
+            return (None, label);
+        }
+    }
+    // dump_node(&case_stat.node(), None);
+    (Some(case_stat), label)
 }
 
 fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {

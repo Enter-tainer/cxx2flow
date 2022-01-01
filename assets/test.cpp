@@ -171,6 +171,65 @@ void test10() {
   }
 }
 
+void test11() {
+  struct grades_list list = {NULL, NULL, 0};
+  struct grades *g;
+  int is_exit = 0;
+  while (is_exit == 0) {
+    int choice, num, i, sub_choice;
+    char ID[16];
+    scanf("%d", &choice);
+    switch (choice) {
+    case 0:
+      clean_info(&list);
+      is_exit = 1;
+      break;
+    case 1: /* 输入 */
+      scanf("%d", &num);
+      for (i = 0; i < num; ++i) {
+        get_grades(&list);
+      }
+      sort_grades(&list);
+      break;
+    case 2: /* 输出 */
+      for_each(&list, print_basic_info);
+      break;
+    case 3: /* 修改 */
+      scanf("%s%d", ID, &sub_choice);
+      g = find_grades(&list, ID);
+      if (g == NULL)
+        break;
+      switch (sub_choice) {
+      case 1:
+        scanf("%d", &(g->english));
+        break;
+      case 2:
+        scanf("%d", &(g->math));
+        break;
+      case 3:
+        scanf("%d", &(g->physics));
+        break;
+      case 4:
+        scanf("%d", &(g->c_lang));
+        break;
+      default:
+        break;
+      }
+      count_grades(g);
+      break;
+    case 4: /* 统计平均 */
+      for_each(&list, print_average);
+      break;
+    case 5: /* 输出总成绩及平均成绩 */
+      for_each(&list, print_sum_and_average);
+      break;
+    default:
+      break;
+    }
+  }
+  return 0;
+}
+
 int main() {
   int n = read(), m = read();
   for (int i = 1; i <= n; i++) f[i][0] = read();
