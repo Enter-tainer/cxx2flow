@@ -1,12 +1,12 @@
 use crate::ast::{Ast, AstNode};
 use crate::error::{Error, Result};
-use itertools::Itertools;
+use hash_chain::ChainMap;
+use itertools::{Itertools, Position};
 use petgraph::stable_graph::{NodeIndex, StableDiGraph};
 use petgraph::visit::{EdgeRef, IntoNodeReferences};
 use petgraph::EdgeDirection;
 use std::collections::HashMap;
 use std::{cell::RefCell, rc::Rc};
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum GraphNodeType {
     Dummy, // dummy nodes will be removed eventually
@@ -28,7 +28,8 @@ struct GraphContext {
     pub graph: Graph,
     pub break_target: Option<NodeIndex>,
     pub continue_target: Option<NodeIndex>,
-    pub goto_target: HashMap<String, NodeIndex>, // shadow?
+    pub goto_target: ChainMap<String, NodeIndex>,
+    #[allow(dead_code)]
     pub global_begin: NodeIndex,
     pub global_end: NodeIndex,
     pub local_source: NodeIndex,
@@ -44,7 +45,7 @@ impl GraphContext {
             graph,
             break_target: None,
             continue_target: None,
-            goto_target: HashMap::new(),
+            goto_target: ChainMap::new(HashMap::new()),
             global_begin: begin,
             global_end: end,
             local_source: begin,
@@ -59,6 +60,18 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
     let local_sink = context.local_sink;
     let break_target = context.break_target;
     let continue_target = context.continue_target;
+    if let Some(labels) = &ast.label {
+        context.goto_target.new_child();
+        for i in labels {
+            if let Some(v) = context.goto_target.get(i) {
+                context.graph.add_edge(*v, local_source, EdgeType::Normal);
+            } else {
+                let v = context.graph.add_node(GraphNodeType::Dummy);
+                context.goto_target.insert(i.clone(), v);
+                context.graph.add_edge(v, local_source, EdgeType::Normal);
+            }
+        }
+    }
     match &ast.node {
         AstNode::Dummy => return Err(Error::UnexpectedDummyAstNode),
         AstNode::Compound(v) => {
@@ -275,10 +288,109 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
             context.local_source = local_source;
             context.local_sink = local_sink;
         }
-        AstNode::Switch { cond, body } => todo!(),
-        AstNode::Goto(_) => todo!(),
+        AstNode::Switch { cond, body, cases } => {
+            // local_src -> cond == case[0] ---Y-> goto case[0]
+            //                              ---N-> cond == case[1] ....
+            //                                                ---N--> goto default
+            // sub_src -> [..body..] -> sub_sink -> local_sink
+            // continue: None
+            // break: local_sink
+            let case_goto_targets: HashMap<String, NodeIndex> = cases
+                .iter()
+                .map(|c| (c.clone(), context.graph.add_node(GraphNodeType::Dummy)))
+                .collect();
+            let table_start = generate_jump_table(
+                cond,
+                &mut context.graph,
+                &mut cases.iter().filter(|x| *x != "default").with_position(),
+                &case_goto_targets,
+                &cases.iter().any(|x| x == "default"),
+                &local_sink,
+            );
+            context
+                .graph
+                .add_edge(local_source, table_start, EdgeType::Normal);
+            let sub_source = context.graph.add_node(GraphNodeType::Dummy);
+            let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
+            context.goto_target.new_child_with(case_goto_targets);
+            context.local_source = sub_source;
+            context.local_sink = sub_sink;
+            context.break_target = Some(local_sink);
+            context.continue_target = None;
+            context
+                .graph
+                .add_edge(sub_sink, local_sink, EdgeType::Normal);
+            build_graph(&body.borrow(), context)?;
+            context.local_source = local_source;
+            context.local_sink = local_sink;
+            context.break_target = break_target;
+            context.continue_target = continue_target;
+            // context.goto_target.remove_child();
+        }
+        AstNode::Goto(t) => {
+            // local_source -> goto_target
+            if let Some(target) = context.goto_target.get(t) {
+                context
+                    .graph
+                    .add_edge(local_source, *target, EdgeType::Normal);
+            } else {
+                let v = context.graph.add_node(GraphNodeType::Dummy);
+                context.goto_target.insert(t.clone(), v);
+                context.graph.add_edge(local_source, v, EdgeType::Normal);
+            }
+        }
     }
     Ok(())
+}
+
+fn generate_jump_table<'a, I>(
+    cond: &str,
+    graph: &mut Graph,
+    iter: &mut I,
+    case_goto_targets: &HashMap<String, NodeIndex>,
+    has_default: &bool,
+    sink: &NodeIndex,
+) -> NodeIndex
+where
+    I: Itertools<Item = Position<&'a String>>,
+{
+    if let Some(i) = iter.next() {
+        // dbg!(i);
+        if i.into_inner() != "default" {
+            let cur = graph.add_node(GraphNodeType::Choice(format!(
+                "{} == {}",
+                cond,
+                i.into_inner()
+            )));
+            graph.add_edge(
+                cur,
+                case_goto_targets[i.into_inner()],
+                EdgeType::Branch(true),
+            );
+            match i {
+                itertools::Position::First(_) | itertools::Position::Middle(_) => {
+                    let idx = generate_jump_table(
+                        cond,
+                        graph,
+                        iter,
+                        case_goto_targets,
+                        has_default,
+                        sink,
+                    );
+                    graph.add_edge(cur, idx, EdgeType::Branch(false));
+                }
+                itertools::Position::Last(_) | itertools::Position::Only(_) => {
+                    if *has_default {
+                        graph.add_edge(cur, case_goto_targets["default"], EdgeType::Branch(false));
+                    } else {
+                        graph.add_edge(cur, *sink, EdgeType::Branch(false));
+                    }
+                }
+            };
+            return cur;
+        }
+    }
+    unreachable!();
 }
 
 fn remove_zero_in_degree_nodes(graph: &mut Graph) -> bool {
@@ -339,6 +451,7 @@ where
 pub fn from_ast(ast: Rc<RefCell<Ast>>) -> Result<Graph> {
     let mut ctx = GraphContext::new();
     build_graph(&ast.borrow(), &mut ctx)?;
+    // dbg!(Dot::new(&ctx.graph));
     while remove_zero_in_degree_nodes(&mut ctx.graph) {}
     while remove_single_node(&mut ctx.graph, |_, t| *t == GraphNodeType::Dummy)? {}
     let remove_empty_nodes: fn(NodeIndex, &GraphNodeType) -> bool = |_, t| match t {

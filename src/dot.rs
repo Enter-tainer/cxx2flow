@@ -41,8 +41,8 @@ pub fn from_graph(graph: &Graph, curved: bool) -> Result<String> {
                 )
                 .as_str(),
             ),
-            // GraphNodeType::Dummy => return Err(Error::UnexpectedDummyGraphNode),
-            GraphNodeType::Dummy => {} // all dummy node will be eliminated
+            GraphNodeType::Dummy => return Err(Error::UnexpectedDummyGraphNode),
+            // GraphNodeType::Dummy => {} // all dummy node will be eliminated
         }
     }
 

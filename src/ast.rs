@@ -38,6 +38,7 @@ pub enum AstNode {
     // Init, Condition, Update, Children
     Switch {
         cond: String,
+        cases: Vec<String>,
         body: Rc<RefCell<Ast>>,
     },
     // Condition, Children

@@ -82,6 +82,7 @@ name = "cxx2flow"
 version = "0.3.0"
 dependencies = [
  "clap",
+ "hash-chain",
  "itertools",
  "log",
  "petgraph",
@@ -101,6 +102,12 @@ name = "fixedbitset"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "398ea4fabe40b9b0d885340a2a991a44c8a645624075ad966d21f88688e2b69e"
+
+[[package]]
+name = "hash-chain"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ae1e9c6caefb8e1fb1be731642c99a7d5803d2282ee890f78dce35aeee988b2"
 
 [[package]]
 name = "hashbrown"

@@ -265,26 +265,29 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
     let condition = switch_stat.child_by_field_name("condition").unwrap();
     let body = switch_stat.child_by_field_name("body").unwrap();
     let cond_str = condition.utf8_text(content)?;
-    let mut vec_stat = Vec::new();
-    let mut vec_label = Vec::new();
+    let mut stats = Vec::new();
+    let mut labels = Vec::new();
+    let mut cases = Vec::new();
     let mut cursor = body.walk();
     cursor.goto_first_child(); // brace
     cursor.goto_next_sibling(); // case statement
                                 // dbg!(cursor.node());
     loop {
         let (child, label) = get_case_child_and_label(cursor.clone(), content);
-        vec_label.push(label);
+        labels.push(label.clone());
+        cases.push(label);
         if let Some(child) = child {
             let mut cursor = child;
-            let first_idx = vec_stat.len();
+            let first_idx = stats.len();
             loop {
                 let stat = parse_stat(cursor.node(), content)?;
-                vec_stat.push(stat);
+                stats.push(stat);
                 if !cursor.goto_next_sibling() {
                     break;
                 }
             }
-            vec_stat[first_idx].borrow_mut().label = Some(vec_label.clone());
+            stats[first_idx].borrow_mut().label = Some(labels.clone());
+            labels.clear();
         }
         if !cursor.goto_next_sibling() {
             break;
@@ -293,10 +296,11 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
             break;
         }
     }
-    let inner = Rc::new(RefCell::new(Ast::new(AstNode::Compound(vec_stat), None)));
+    let inner = Rc::new(RefCell::new(Ast::new(AstNode::Compound(stats), None)));
     let res = Rc::new(RefCell::new(Ast::new(
         AstNode::Switch {
             cond: String::from(cond_str),
+            cases,
             body: inner,
         },
         None,
