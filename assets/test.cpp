@@ -125,12 +125,28 @@ void test7() {
 
 void test8() {
 l1 : l2: switch (c) {
-  case 0:
-    goto l1;
+    case 0:
     break;
     case 1:
     default:
       d;
+  }
+}
+
+void test9() {
+  switch (c) {
+  case 0:
+  case 1:
+    a + b;
+    break;
+  case 2:
+  case 3:
+    c + d;
+  case 4:
+    d;
+    break;
+  default:
+    e;
   }
 }
 
