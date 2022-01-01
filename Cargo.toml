@@ -27,7 +27,7 @@ tree-sitter-cpp = "0.20.0"
 petgraph = "0.6.0"
 itertools = "0.10.3"
 hash-chain = "0.3.2"
-
+miette = { version = "3.2.0", features = ["fancy"] }
 
 [profile.release]
 lto = "fat"

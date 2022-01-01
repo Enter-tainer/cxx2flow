@@ -2,6 +2,7 @@ use crate::ast::{Ast, AstNode};
 use crate::error::{Error, Result};
 use hash_chain::ChainMap;
 use itertools::{Itertools, Position};
+use miette::NamedSource;
 use petgraph::stable_graph::{NodeIndex, StableDiGraph};
 use petgraph::visit::{EdgeRef, IntoNodeReferences};
 use petgraph::EdgeDirection;
@@ -54,7 +55,7 @@ impl GraphContext {
     }
 }
 
-fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
+fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &str) -> Result<()> {
     // local_source -> [...current parsing...] -> local_sink
     let local_source = context.local_source;
     let local_sink = context.local_sink;
@@ -73,7 +74,12 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
         }
     }
     match &ast.node {
-        AstNode::Dummy => return Err(Error::UnexpectedDummyAstNode),
+        AstNode::Dummy => {
+            return Err(Error::UnexpectedDummyAstNode {
+                src: NamedSource::new(file_name.to_string(), source.to_string()),
+                range: ast.range.clone().into(),
+            })
+        }
         AstNode::Compound(v) => {
             let mut sub_source = context.graph.add_node(GraphNodeType::Dummy);
             let mut sub_sink = context.graph.add_node(GraphNodeType::Dummy);
@@ -89,7 +95,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
                 for i in v.iter().with_position() {
                     context.local_source = sub_source;
                     context.local_sink = sub_sink;
-                    build_graph(&i.into_inner().borrow(), context)?;
+                    build_graph(&i.into_inner().borrow(), context, source, file_name)?;
                     match i {
                         itertools::Position::First(_) | itertools::Position::Middle(_) => {
                             sub_source = sub_sink;
@@ -123,7 +129,10 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
                 .add_edge(local_source, current, EdgeType::Normal);
             context.graph.add_edge(
                 current,
-                context.continue_target.ok_or(Error::UnexpectedContinue)?,
+                context.continue_target.ok_or(Error::UnexpectedContinue {
+                    src: NamedSource::new(file_name.to_string(), source.to_string()),
+                    range: ast.range.clone().into(),
+                })?,
                 EdgeType::Normal,
             );
         }
@@ -135,7 +144,10 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
                 .add_edge(local_source, current, EdgeType::Normal);
             context.graph.add_edge(
                 current,
-                context.break_target.ok_or(Error::UnexpectedBreak)?,
+                context.break_target.ok_or(Error::UnexpectedBreak {
+                    src: NamedSource::new(file_name.to_string(), source.to_string()),
+                    range: ast.range.clone().into(),
+                })?,
                 EdgeType::Normal,
             );
         }
@@ -171,7 +183,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
             // context must be restored after calling this function
             // only graph should be changed
             // so it is OK to process the other branch directly
-            build_graph(&body.borrow(), context)?;
+            build_graph(&body.borrow(), context, source, file_name)?;
             // restore context
             context.local_source = local_source;
             context.local_sink = local_sink;
@@ -183,7 +195,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
                     .add_edge(cond, sub_source1, EdgeType::Branch(false));
                 context.local_source = sub_source1;
                 context.local_sink = sub_sink;
-                build_graph(&t.borrow(), context)?;
+                build_graph(&t.borrow(), context, source, file_name)?;
                 context.local_source = local_source;
                 context.local_sink = local_sink;
             } else {
@@ -215,7 +227,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
             context.break_target = Some(local_sink);
             context.local_source = sub_source;
             context.local_sink = sub_sink;
-            build_graph(&body.borrow(), context)?;
+            build_graph(&body.borrow(), context, source, file_name)?;
             context.continue_target = continue_target;
             context.break_target = break_target;
             context.local_source = local_source;
@@ -244,7 +256,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
             context.break_target = Some(local_sink);
             context.local_source = sub_source;
             context.local_sink = sub_sink;
-            build_graph(&body.borrow(), context)?;
+            build_graph(&body.borrow(), context, source, file_name)?;
             context.continue_target = continue_target;
             context.break_target = break_target;
             context.local_source = local_source;
@@ -282,7 +294,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
             context.break_target = Some(local_sink);
             context.local_source = sub_source;
             context.local_sink = sub_sink;
-            build_graph(&body.borrow(), context)?;
+            build_graph(&body.borrow(), context, source, file_name)?;
             context.continue_target = continue_target;
             context.break_target = break_target;
             context.local_source = local_source;
@@ -320,7 +332,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext) -> Result<()> {
             context
                 .graph
                 .add_edge(sub_sink, local_sink, EdgeType::Normal);
-            build_graph(&body.borrow(), context)?;
+            build_graph(&body.borrow(), context, source, file_name)?;
             context.local_source = local_source;
             context.local_sink = local_sink;
             context.break_target = break_target;
@@ -385,7 +397,7 @@ where
     unreachable!();
 }
 
-fn remove_zero_in_degree_nodes(graph: &mut Graph) -> bool {
+fn remove_zero_in_degree_nodes(graph: &mut Graph, _source: &str) -> bool {
     let nodes = graph
         .node_indices()
         .filter(|i| -> bool {
@@ -403,7 +415,7 @@ fn remove_zero_in_degree_nodes(graph: &mut Graph) -> bool {
 // return Ok(true) if successfully remove a node
 // return Ok(false) if no node is available
 // return Err if there are more than one predecessors
-fn remove_single_node<F>(graph: &mut Graph, predicate: F) -> Result<bool>
+fn remove_single_node<F>(graph: &mut Graph, _source: &str, predicate: F) -> Result<bool>
 where
     F: Fn(NodeIndex, &GraphNodeType) -> bool,
 {
@@ -423,9 +435,10 @@ where
             .neighbors_directed(node_index, EdgeDirection::Outgoing)
             .collect_vec();
         if neighbors.len() != 1 {
-            return Err(Error::UnexpectedOutgoingNodes {
+            return Err(Error::UnexpectedOutgoingEdges {
                 node_index,
                 neighbors,
+                graph: graph.clone(),
             });
         }
         let next_node = neighbors[0];
@@ -440,16 +453,16 @@ where
     }
 }
 
-pub fn from_ast(ast: Rc<RefCell<Ast>>) -> Result<Graph> {
+pub fn from_ast(ast: Rc<RefCell<Ast>>, source: &str, file_name: &str) -> Result<Graph> {
     let mut ctx = GraphContext::new();
-    build_graph(&ast.borrow(), &mut ctx)?;
+    build_graph(&ast.borrow(), &mut ctx, source, file_name)?;
     // dbg!(petgraph::dot::Dot::new(&ctx.graph));
-    while remove_zero_in_degree_nodes(&mut ctx.graph) {}
-    while remove_single_node(&mut ctx.graph, |_, t| *t == GraphNodeType::Dummy)? {}
+    while remove_zero_in_degree_nodes(&mut ctx.graph, source) {}
+    while remove_single_node(&mut ctx.graph, source, |_, t| *t == GraphNodeType::Dummy)? {}
     let remove_empty_nodes: fn(NodeIndex, &GraphNodeType) -> bool = |_, t| match t {
         GraphNodeType::Node(t) => t.is_empty(),
         _ => false,
     };
-    while remove_single_node(&mut ctx.graph, remove_empty_nodes)? {}
+    while remove_single_node(&mut ctx.graph, source, remove_empty_nodes)? {}
     Ok(ctx.graph)
 }

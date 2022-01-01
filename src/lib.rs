@@ -8,13 +8,14 @@ mod tikz;
 use error::Result;
 pub fn generate(
     content: &[u8],
+    file_name: &str,
     function_name: Option<String>,
     curly: bool,
     tikz: bool,
 ) -> Result<String> {
-    let ast = parser::parse(content, function_name)?;
+    let ast = parser::parse(content, file_name, function_name)?;
     // dbg!(&ast);
-    let graph = graph::from_ast(ast)?;
+    let graph = graph::from_ast(ast, &String::from_utf8(content.to_vec())?, file_name)?;
     // dbg!(&graph);
     if tikz {
         tikz::from_graph(&graph, curly)

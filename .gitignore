@@ -307,3 +307,4 @@ TSWLatexianTemp*
 #*Notes.bib
 *.pdf
 .idea
+!error_reporting.png

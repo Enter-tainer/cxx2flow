@@ -61,8 +61,11 @@ pub fn from_graph(graph: &Graph, _curved: bool) -> Result<String> {
                 .replace('\n', " ")
                 .as_str(),
             ),
-            GraphNodeType::Dummy => return Err(Error::UnexpectedDummyGraphNode),
-            // all dummy node will be eliminated
+            GraphNodeType::Dummy => {
+                return Err(Error::UnexpectedDummyGraphNode {
+                    graph: graph.clone(),
+                })
+            } // all dummy node will be eliminated
         }
     }
     for i in graph.edge_references() {

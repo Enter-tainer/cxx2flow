@@ -1,12 +1,18 @@
 use clap::Parser;
-use cxx2flow::{error::Result, generate};
+use cxx2flow::generate;
+use miette::IntoDiagnostic;
 
 #[derive(Parser, Debug)]
 #[clap(about, version, author, after_help("Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
 
 EXAMPLES:
     cxx2flow test.cpp | dot -Tpng -o test.png
-    cxx2flow main.cpp my_custom_func | dot -Tsvg -o test.svg"))]
+    cxx2flow main.cpp my_custom_func | dot -Tsvg -o test.svg
+
+Please give me star if this application helps you!
+如果这个应用有帮助到你，请给我点一个 star！
+https://github.com/Enter-tainer/cxx2flow
+"))]
 struct Args {
     #[clap(
         short,
@@ -42,12 +48,19 @@ If specified, output flow chart will have curly connection line."
     function: String,
 }
 
-fn main() -> Result<()> {
+fn main() -> miette::Result<()> {
+    miette::set_panic_hook();
     let args = Args::parse();
-    let content = std::fs::read(args.input)?;
-    let res = generate(&content, Some(args.function), args.curly, args.tikz)?;
+    let content = std::fs::read(&args.input).into_diagnostic()?;
+    let res = generate(
+        &content,
+        &args.input,
+        Some(args.function),
+        args.curly,
+        args.tikz,
+    )?;
     if let Some(output) = args.output {
-        std::fs::write(output, res)?;
+        std::fs::write(output, res).into_diagnostic()?;
     } else {
         print!("{}", res);
     }

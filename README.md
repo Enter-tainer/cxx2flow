@@ -28,6 +28,10 @@ inline int read() {  //快读
 }
 ```
 
+### 错误报告
+
+![error reporting](assets/error_reporting.png)
+
 ## 安装
 
 ### 自行编译

@@ -4,6 +4,7 @@ use crate::ast::{Ast, AstNode};
 #[allow(unused_imports)]
 use crate::dump::dump_node;
 use crate::error::{Error, Result};
+use miette::NamedSource;
 use tree_sitter::{Node, Parser, TreeCursor};
 
 fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
@@ -24,7 +25,11 @@ fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
     None
 }
 
-pub fn parse(content: &[u8], function_name: Option<String>) -> Result<Rc<RefCell<Ast>>> {
+pub fn parse(
+    content: &[u8],
+    file_name: &str,
+    function_name: Option<String>,
+) -> Result<Rc<RefCell<Ast>>> {
     let mut parser = Parser::new();
     let language = tree_sitter_cpp::language();
     parser.set_language(language)?;
@@ -48,7 +53,13 @@ pub fn parse(content: &[u8], function_name: Option<String>) -> Result<Rc<RefCell
         let stats = cursor.node().child_by_field_name("body").unwrap();
         let node = cursor.node().child_by_field_name("declarator");
         if node.is_none() {
-            return Err(Error::NotFound("declarator"));
+            return Err(Error::NotFound {
+                src: NamedSource::new(
+                    file_name.to_string(),
+                    cursor.node().utf8_text(content)?.to_string(),
+                ),
+                range: cursor.node().byte_range().into(),
+            });
         }
         let node = node.unwrap();
         let func_name = filter_ast(node, "identifier");
@@ -63,7 +74,13 @@ pub fn parse(content: &[u8], function_name: Option<String>) -> Result<Rc<RefCell
         remove_dummy(res.clone());
         return Ok(res);
     }
-    Err(Error::NotFound("target function"))
+    Err(Error::NotFound {
+        src: NamedSource::new(
+            file_name.to_string(),
+            cursor.node().utf8_text(content)?.to_string(),
+        ),
+        range: (0..target_function.len()).into(),
+    })
 }
 
 fn remove_dummy(ast: Rc<RefCell<Ast>>) {
@@ -100,6 +117,7 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             if !cursor.goto_first_child() {
                 return Ok(Rc::new(RefCell::new(Ast::new(
                     AstNode::Compound(Vec::new()),
+                    stat.byte_range(),
                     None,
                 ))));
             }
@@ -113,6 +131,7 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             }
             Ok(Rc::new(RefCell::new(Ast::new(
                 AstNode::Compound(vec),
+                stat.byte_range(),
                 None,
             ))))
         }
@@ -145,7 +164,11 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
                 if !matches!(msg, Error::GarbageToken(_)) {
                     return Err(msg);
                 } else {
-                    return Ok(Rc::new(RefCell::new(Ast::new(AstNode::Dummy, None))));
+                    return Ok(Rc::new(RefCell::new(Ast::new(
+                        AstNode::Dummy,
+                        stat.byte_range(),
+                        None,
+                    ))));
                 }
             }
             unreachable!();
@@ -157,16 +180,19 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
     match stat.kind() {
         "continue_statement" => Ok(Rc::new(RefCell::new(Ast::new(
             AstNode::Continue("continue".to_string()),
+            stat.byte_range(),
             None,
         )))),
         "break_statement" => Ok(Rc::new(RefCell::new(Ast::new(
             AstNode::Break("break".to_string()),
+            stat.byte_range(),
             None,
         )))),
         "return_statement" => {
             let str = stat.utf8_text(content)?;
             Ok(Rc::new(RefCell::new(Ast::new(
                 AstNode::Return(String::from(str)),
+                stat.byte_range(),
                 None,
             ))))
         }
@@ -180,6 +206,7 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             let str = stat.utf8_text(content)?;
             Ok(Rc::new(RefCell::new(Ast::new(
                 AstNode::Stat(String::from(str)),
+                stat.byte_range(),
                 None,
             ))))
         }
@@ -207,6 +234,7 @@ fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             body,
             otherwise,
         },
+        if_stat.byte_range(),
         None,
     )));
     Ok(res)
@@ -223,6 +251,7 @@ fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>
             cond: String::from(cond_str),
             body,
         },
+        while_stat.byte_range(),
         None,
     )));
     Ok(res)
@@ -302,13 +331,18 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
             break;
         }
     }
-    let inner = Rc::new(RefCell::new(Ast::new(AstNode::Compound(stats), None)));
+    let inner = Rc::new(RefCell::new(Ast::new(
+        AstNode::Compound(stats),
+        switch_stat.byte_range(),
+        None,
+    )));
     let res = Rc::new(RefCell::new(Ast::new(
         AstNode::Switch {
             cond: String::from(cond_str),
             cases,
             body: inner,
         },
+        switch_stat.byte_range(),
         None,
     )));
     Ok(res)
@@ -321,6 +355,7 @@ fn parse_goto_stat(goto_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> 
         .utf8_text(content)?;
     Ok(Rc::new(RefCell::new(Ast::new(
         AstNode::Goto(label_str.to_owned()),
+        goto_stat.byte_range(),
         None,
     ))))
 }
@@ -335,6 +370,7 @@ fn parse_do_while_stat(do_while_stat: Node, content: &[u8]) -> Result<Rc<RefCell
             cond: String::from(cond_str),
             body,
         },
+        do_while_stat.byte_range(),
         None,
     )));
 
@@ -371,6 +407,7 @@ fn parse_for_stat(for_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             upd: update_str,
             body,
         },
+        for_stat.byte_range(),
         None,
     )));
     Ok(res)
