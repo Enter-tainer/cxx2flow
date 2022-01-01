@@ -49,12 +49,13 @@ pub fn from_graph(graph: &Graph, curved: bool) -> Result<String> {
     for i in graph.edge_references() {
         match i.weight() {
             crate::graph::EdgeType::Normal => res.push_str(
-                format!("D{}:s -> D{}:n;\n", i.source().index(), i.target().index()).as_str(),
+                format!("D{} -> D{};\n", i.source().index(), i.target().index()).as_str(),
             ),
             crate::graph::EdgeType::Branch(t) => res.push_str(
                 format!(
-                    "D{}:s -> D{}:n [xlabel={}];\n",
+                    "D{}:{} -> D{}:n [xlabel={}];\n",
                     i.source().index(),
+                    if *t { "s" } else { "e" },
                     i.target().index(),
                     if *t { "Y" } else { "N" }
                 )

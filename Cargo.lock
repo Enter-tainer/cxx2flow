@@ -79,7 +79,7 @@ dependencies = [
 
 [[package]]
 name = "cxx2flow"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "clap",
  "hash-chain",
