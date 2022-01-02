@@ -51,7 +51,7 @@ cargo install cxx2flow
 为了编译生成的 dot 文件，你需要安装 graphviz，并将其添加到 PATH 中。也可以将生成的结果复制进在线的 graphviz 服务中，如 http://magjac.com/graphviz-visual-editor/ 。
 
 ```
-cxx2flow 0.5.0
+cxx2flow 0.5.1
 mgt <mgt@oi-wiki.org>
 Convert your C/C++ code to control flow chart
 
@@ -77,6 +77,10 @@ Note that you need to manually compile the dot file using graphviz to get SVG or
 EXAMPLES:
     cxx2flow test.cpp | dot -Tpng -o test.png
     cxx2flow main.cpp my_custom_func | dot -Tsvg -o test.svg
+
+Please give me star if this application helps you!
+如果这个应用有帮助到你，请给我点一个 star！
+https://github.com/Enter-tainer/cxx2flow
 ```
 
 ## 限制
