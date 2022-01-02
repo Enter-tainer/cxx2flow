@@ -3,7 +3,7 @@ use cxx2flow::generate;
 use miette::IntoDiagnostic;
 
 #[derive(Parser, Debug)]
-#[clap(about, version, author, after_help("Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
+#[clap(about, version, long_version(get_long_version_string()) ,author, after_help("Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
 
 EXAMPLES:
     cxx2flow test.cpp | dot -Tpng -o test.png
@@ -46,6 +46,28 @@ If specified, output flow chart will have curly connection line."
         help("The function you want to convert. e.g. main")
     )]
     function: String,
+}
+
+fn get_long_version_string() -> &'static str {
+    let long_version: String = format!(
+        "
+Build Timestamp:     {}
+Build Version:       {}
+Commit SHA:          {:?}
+Commit Date:         {:?}
+Commit Branch:       {:?}
+cargo Target Triple: {}
+cargo Profile:       {}
+",
+        env!("VERGEN_BUILD_TIMESTAMP"),
+        env!("VERGEN_BUILD_SEMVER"),
+        option_env!("VERGEN_GIT_SHA"),
+        option_env!("VERGEN_GIT_COMMIT_TIMESTAMP"),
+        option_env!("VERGEN_GIT_BRANCH"),
+        env!("VERGEN_CARGO_TARGET_TRIPLE"),
+        env!("VERGEN_CARGO_PROFILE")
+    );
+    Box::leak(Box::new(long_version)).as_str()
 }
 
 fn main() -> miette::Result<()> {

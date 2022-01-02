@@ -1,6 +1,6 @@
 [package]
 name = "cxx2flow"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2018"
 authors = ["mgt <mgt@oi-wiki.org>"] 
 description = "Convert your C/C++ code to control flow chart"
@@ -28,6 +28,7 @@ petgraph = "0.6.0"
 itertools = "0.10.3"
 hash-chain = "0.3.2"
 miette = { version = "3.2.0", features = ["fancy"] }
-
+[build-dependencies]
+vergen = "6"
 [profile.release]
 lto = "fat"
