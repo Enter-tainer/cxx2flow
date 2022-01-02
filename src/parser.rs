@@ -159,6 +159,7 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             Ok(ast)
         }
         _ => {
+            let range = stat.byte_range();
             let res = parse_single_stat(stat, content);
             if let Ok(res) = res {
                 return Ok(res);
@@ -169,7 +170,7 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
                 } else {
                     return Ok(Rc::new(RefCell::new(Ast::new(
                         AstNode::Dummy,
-                        stat.byte_range().to_range_usize(),
+                        range.to_range_usize(),
                         None,
                     ))));
                 }

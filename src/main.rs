@@ -1,4 +1,3 @@
-use std::future;
 
 use cxx2flow::generate;
 use once_cell::sync::Lazy;

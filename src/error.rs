@@ -1,6 +1,7 @@
 use miette::{Diagnostic, NamedSource, SourceSpan};
 use petgraph::graph::NodeIndex;
 use thiserror::Error;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::graph::Graph;
 
