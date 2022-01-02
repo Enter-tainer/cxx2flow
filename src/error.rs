@@ -25,17 +25,24 @@ pub enum Error {
     #[diagnostic(code(cxx2flow::from_utf8), help("error with UTF-8 decoding"))]
     FromUTF8(#[from] std::string::FromUtf8Error),
 
-    #[error("not found")]
+    #[error("target function not found")]
     #[diagnostic(
-        code(cxx2flow::not_found),
+        code(cxx2flow::target_function_not_found),
         help("maybe you have a typo, or source code is incomplete, \nplease check your input")
     )]
-    NotFound {
+    FunctionNotFound {
         #[source_code]
-        src: NamedSource,
-        #[label("this is the name your target function")]
+        src: String,
+        #[label("this is the name of your target function")]
         range: SourceSpan,
     },
+    
+    #[error("declarator not found")]
+    #[diagnostic(
+        code(cxx2flow::declarator_not_found),
+        help("maybe source code is incomplete, \nplease check your input")
+    )]
+    DeclaratorNotFound,
 
     #[diagnostic(
         code(cxx2flow::garbage_token),

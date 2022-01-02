@@ -53,13 +53,7 @@ pub fn parse(
         let stats = cursor.node().child_by_field_name("body").unwrap();
         let node = cursor.node().child_by_field_name("declarator");
         if node.is_none() {
-            return Err(Error::NotFound {
-                src: NamedSource::new(
-                    file_name.to_string(),
-                    cursor.node().utf8_text(content)?.to_string(),
-                ),
-                range: cursor.node().byte_range().into(),
-            });
+            return Err(Error::DeclaratorNotFound);
         }
         let node = node.unwrap();
         let func_name = filter_ast(node, "identifier");
@@ -74,11 +68,8 @@ pub fn parse(
         remove_dummy(res.clone());
         return Ok(res);
     }
-    Err(Error::NotFound {
-        src: NamedSource::new(
-            file_name.to_string(),
-            cursor.node().utf8_text(content)?.to_string(),
-        ),
+    Err(Error::FunctionNotFound {
+        src: target_function.clone(),
         range: (0..target_function.len()).into(),
     })
 }
