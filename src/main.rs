@@ -1,3 +1,5 @@
+use once_cell::sync::Lazy;
+
 use clap::Parser;
 use cxx2flow::generate;
 use miette::IntoDiagnostic;
@@ -49,8 +51,9 @@ If specified, output flow chart will have curly connection line."
 }
 
 fn get_long_version_string() -> &'static str {
-    let long_version: String = format!(
-        "
+    static CELL: Lazy<String> = Lazy::new(|| {
+        format!(
+            "
 Build Timestamp:     {}
 Build Version:       {}
 Commit SHA:          {:?}
@@ -59,15 +62,16 @@ Commit Branch:       {:?}
 cargo Target Triple: {}
 cargo Profile:       {}
 ",
-        env!("VERGEN_BUILD_TIMESTAMP"),
-        env!("VERGEN_BUILD_SEMVER"),
-        option_env!("VERGEN_GIT_SHA"),
-        option_env!("VERGEN_GIT_COMMIT_TIMESTAMP"),
-        option_env!("VERGEN_GIT_BRANCH"),
-        env!("VERGEN_CARGO_TARGET_TRIPLE"),
-        env!("VERGEN_CARGO_PROFILE")
-    );
-    Box::leak(Box::new(long_version)).as_str()
+            env!("VERGEN_BUILD_TIMESTAMP"),
+            env!("VERGEN_BUILD_SEMVER"),
+            option_env!("VERGEN_GIT_SHA"),
+            option_env!("VERGEN_GIT_COMMIT_TIMESTAMP"),
+            option_env!("VERGEN_GIT_BRANCH"),
+            env!("VERGEN_CARGO_TARGET_TRIPLE"),
+            env!("VERGEN_CARGO_PROFILE")
+        )
+    });
+    CELL.as_str()
 }
 
 fn main() -> miette::Result<()> {

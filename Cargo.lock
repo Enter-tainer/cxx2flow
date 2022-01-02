@@ -144,6 +144,7 @@ dependencies = [
  "itertools",
  "log",
  "miette",
+ "once_cell",
  "petgraph",
  "thiserror",
  "tree-sitter",
