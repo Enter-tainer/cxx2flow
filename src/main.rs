@@ -59,8 +59,8 @@ Build Version:       {}
 Commit SHA:          {:?}
 Commit Date:         {:?}
 Commit Branch:       {:?}
-cargo Target Triple: {}
-cargo Profile:       {}
+Cargo Target Triple: {}
+Cargo Profile:       {}
 ",
             env!("VERGEN_BUILD_TIMESTAMP"),
             env!("VERGEN_BUILD_SEMVER"),
