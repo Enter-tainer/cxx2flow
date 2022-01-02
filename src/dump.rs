@@ -1,4 +1,4 @@
-use tree_sitter::Node;
+use tree_sitter_facade::Node;
 #[allow(dead_code)]
 fn dump_node_internal(node: &Node, level: usize) {
     println!("{}{:?}", " ".repeat(level), node);

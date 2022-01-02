@@ -1,7 +1,9 @@
+use std::future;
+
+use cxx2flow::generate;
 use once_cell::sync::Lazy;
 
 use clap::Parser;
-use cxx2flow::generate;
 use miette::IntoDiagnostic;
 
 #[derive(Parser, Debug)]
@@ -78,13 +80,13 @@ fn main() -> miette::Result<()> {
     miette::set_panic_hook();
     let args = Args::parse();
     let content = std::fs::read(&args.input).into_diagnostic()?;
-    let res = generate(
+    let res = futures::executor::block_on(generate(
         &content,
         &args.input,
         Some(args.function),
         args.curly,
         args.tikz,
-    )?;
+    ))?;
     if let Some(output) = args.output {
         std::fs::write(output, res).into_diagnostic()?;
     } else {

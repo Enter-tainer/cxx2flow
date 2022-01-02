@@ -16,19 +16,27 @@ path = "src/main.rs"
 [lib]
 name = "cxx2flow"
 path = "src/lib.rs"
-crate-type = ["lib"]
+crate-type = ["cdylib", "lib"]
 
 [dependencies]
 thiserror = "1.0"
 clap = { version = "3.0.0", features = ["derive", "wrap_help"] }
+futures = "0.3.19"
 log = "0.4.14"
-tree-sitter = "0.20.0"
-tree-sitter-cpp = "0.20.0"
 petgraph = "0.6.0"
 itertools = "0.10.3"
 hash-chain = "0.3.2"
 once_cell = "1.9.0"
 miette = { version = "3.2.0", features = ["fancy"] }
+tree-sitter-facade = "0.2.0"
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-tree-sitter-sys = "0.4.0"
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tree-sitter-cpp = "0.20.0"
+
+
 [build-dependencies]
 vergen = "6"
 [profile.release]

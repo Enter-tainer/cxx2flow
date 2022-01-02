@@ -11,7 +11,14 @@ pub enum Error {
         code(cxx2flow::tree_sitter),
         help("error with tree_sitter parsing library")
     )]
-    TreeSitter(#[from] tree_sitter::LanguageError),
+    TreeSitter(#[from] tree_sitter_facade::LanguageError),
+    
+    #[error("transparent")]
+    #[diagnostic(
+        code(cxx2flow::parser),
+        help("error with tree_sitter parsing library")
+    )]
+    Parser(#[from] tree_sitter_facade::ParserError),
 
     #[error("transparent")]
     #[diagnostic(code(cxx2flow::io), help("error with reading/writing file"))]
@@ -49,7 +56,7 @@ pub enum Error {
         help("garbage token found in AST\nthis might be a bug, please report it to the author")
     )]
     #[error("garbage token {0}")]
-    GarbageToken(&'static str),
+    GarbageToken(String),
 
     #[diagnostic(
         code(cxx2flow::unexpected_continue),

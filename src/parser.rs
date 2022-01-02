@@ -1,11 +1,22 @@
+use std::ops::Range;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::ast::{Ast, AstNode};
 #[allow(unused_imports)]
 use crate::dump::dump_node;
 use crate::error::{Error, Result};
-use miette::NamedSource;
-use tree_sitter::{Node, Parser, TreeCursor};
+use tree_sitter_facade::Language;
+use tree_sitter_facade::{Node, Parser, TreeCursor};
+
+trait ToRangeUsize {
+    fn to_range_usize(self) -> Range<usize>;
+}
+
+impl ToRangeUsize for Range<u32> {
+    fn to_range_usize(self) -> Range<usize> {
+        self.start as usize..self.end as usize
+    }
+}
 
 fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
     if node.kind() == kind {
@@ -28,12 +39,12 @@ fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
 pub fn parse(
     content: &[u8],
     file_name: &str,
+    language: Language,
     function_name: Option<String>,
 ) -> Result<Rc<RefCell<Ast>>> {
-    let mut parser = Parser::new();
-    let language = tree_sitter_cpp::language();
-    parser.set_language(language)?;
-    let tree = parser.parse(&content, None).unwrap();
+    let mut parser = Parser::new()?;
+    parser.set_language(&language)?;
+    let tree = parser.parse(&content, None)?.unwrap();
     let mut cursor = tree.walk();
     cursor.goto_first_child();
     let mut functions: Vec<Node> = Vec::new();
@@ -101,14 +112,14 @@ fn remove_dummy(ast: Rc<RefCell<Ast>>) {
 }
 
 fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
-    match stat.kind() {
+    match stat.kind().to_string().as_str() {
         "compound_statement" => {
             let mut cursor = stat.walk();
             let mut vec = Vec::new();
             if !cursor.goto_first_child() {
                 return Ok(Rc::new(RefCell::new(Ast::new(
                     AstNode::Compound(Vec::new()),
-                    stat.byte_range(),
+                    stat.byte_range().to_range_usize(),
                     None,
                 ))));
             }
@@ -122,7 +133,7 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             }
             Ok(Rc::new(RefCell::new(Ast::new(
                 AstNode::Compound(vec),
-                stat.byte_range(),
+                stat.byte_range().to_range_usize(),
                 None,
             ))))
         }
@@ -134,7 +145,8 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
                 let label_str = node
                     .child_by_field_name("label")
                     .unwrap()
-                    .utf8_text(content)?;
+                    .utf8_text(content)?
+                    .to_string();
                 label_vec.push(label_str.to_owned());
                 cursor.goto_first_child();
                 while cursor.goto_next_sibling() {}
@@ -157,7 +169,7 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
                 } else {
                     return Ok(Rc::new(RefCell::new(Ast::new(
                         AstNode::Dummy,
-                        stat.byte_range(),
+                        stat.byte_range().to_range_usize(),
                         None,
                     ))));
                 }
@@ -168,22 +180,22 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
 }
 
 fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
-    match stat.kind() {
+    match stat.kind().to_string().as_str() {
         "continue_statement" => Ok(Rc::new(RefCell::new(Ast::new(
             AstNode::Continue("continue".to_string()),
-            stat.byte_range(),
+            stat.byte_range().to_range_usize(),
             None,
         )))),
         "break_statement" => Ok(Rc::new(RefCell::new(Ast::new(
             AstNode::Break("break".to_string()),
-            stat.byte_range(),
+            stat.byte_range().to_range_usize(),
             None,
         )))),
         "return_statement" => {
             let str = stat.utf8_text(content)?;
             Ok(Rc::new(RefCell::new(Ast::new(
                 AstNode::Return(String::from(str)),
-                stat.byte_range(),
+                stat.byte_range().to_range_usize(),
                 None,
             ))))
         }
@@ -197,12 +209,12 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             let str = stat.utf8_text(content)?;
             Ok(Rc::new(RefCell::new(Ast::new(
                 AstNode::Stat(String::from(str)),
-                stat.byte_range(),
+                stat.byte_range().to_range_usize(),
                 None,
             ))))
         }
         // ignore all unrecognized token
-        c => Err(Error::GarbageToken(c)),
+        c => Err(Error::GarbageToken(c.to_string())),
     }
 }
 
@@ -225,7 +237,7 @@ fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             body,
             otherwise,
         },
-        if_stat.byte_range(),
+        if_stat.byte_range().to_range_usize(),
         None,
     )));
     Ok(res)
@@ -242,7 +254,7 @@ fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>
             cond: String::from(cond_str),
             body,
         },
-        while_stat.byte_range(),
+        while_stat.byte_range().to_range_usize(),
         None,
     )));
     Ok(res)
@@ -250,7 +262,7 @@ fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>
 
 // return first child, or return the case label
 fn get_case_child_and_label<'a>(
-    mut case_stat: tree_sitter::TreeCursor<'a>,
+    mut case_stat: tree_sitter_facade::TreeCursor<'a>,
     content: &[u8],
 ) -> (Option<TreeCursor<'a>>, String) {
     // dump_node(&case_stat.node(), None);
@@ -278,7 +290,7 @@ fn get_case_child_and_label<'a>(
         // default :
         case_stat.goto_next_sibling();
     }
-    while [":", "comment"].contains(&case_stat.node().kind()) {
+    while [":", "comment"].contains(&case_stat.node().kind().to_string().as_str()) {
         if !case_stat.goto_next_sibling() {
             return (None, label);
         }
@@ -324,7 +336,7 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
     }
     let inner = Rc::new(RefCell::new(Ast::new(
         AstNode::Compound(stats),
-        switch_stat.byte_range(),
+        switch_stat.byte_range().to_range_usize(),
         None,
     )));
     let res = Rc::new(RefCell::new(Ast::new(
@@ -333,7 +345,7 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
             cases,
             body: inner,
         },
-        switch_stat.byte_range(),
+        switch_stat.byte_range().to_range_usize(),
         None,
     )));
     Ok(res)
@@ -345,8 +357,8 @@ fn parse_goto_stat(goto_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> 
         .unwrap()
         .utf8_text(content)?;
     Ok(Rc::new(RefCell::new(Ast::new(
-        AstNode::Goto(label_str.to_owned()),
-        goto_stat.byte_range(),
+        AstNode::Goto(label_str.to_string()),
+        goto_stat.byte_range().to_range_usize(),
         None,
     ))))
 }
@@ -361,7 +373,7 @@ fn parse_do_while_stat(do_while_stat: Node, content: &[u8]) -> Result<Rc<RefCell
             cond: String::from(cond_str),
             body,
         },
-        do_while_stat.byte_range(),
+        do_while_stat.byte_range().to_range_usize(),
         None,
     )));
 
@@ -398,7 +410,7 @@ fn parse_for_stat(for_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
             upd: update_str,
             body,
         },
-        for_stat.byte_range(),
+        for_stat.byte_range().to_range_usize(),
         None,
     )));
     Ok(res)
