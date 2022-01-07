@@ -4,8 +4,28 @@ use clap::Parser;
 use cxx2flow::generate;
 use miette::IntoDiagnostic;
 
+static LONG_VERSION: Lazy<String> = Lazy::new(|| {
+    format!(
+        "
+Build Timestamp:     {}
+Build Version:       {}
+Commit SHA:          {:?}
+Commit Date:         {:?}
+Commit Branch:       {:?}
+Cargo Target Triple: {}
+Cargo Profile:       {}
+",
+        env!("VERGEN_BUILD_TIMESTAMP"),
+        env!("VERGEN_BUILD_SEMVER"),
+        option_env!("VERGEN_GIT_SHA"),
+        option_env!("VERGEN_GIT_COMMIT_TIMESTAMP"),
+        option_env!("VERGEN_GIT_BRANCH"),
+        env!("VERGEN_CARGO_TARGET_TRIPLE"),
+        env!("VERGEN_CARGO_PROFILE")
+    )
+});
 #[derive(Parser, Debug)]
-#[clap(about, version, long_version(get_long_version_string()) ,author, after_help("Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
+#[clap(about, version, long_version(LONG_VERSION.as_str()) ,author, after_help("Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
 
 EXAMPLES:
     cxx2flow test.cpp | dot -Tpng -o test.png
@@ -50,29 +70,6 @@ If specified, output flow chart will have curly connection line."
     function: String,
 }
 
-fn get_long_version_string() -> &'static str {
-    static CELL: Lazy<String> = Lazy::new(|| {
-        format!(
-            "
-Build Timestamp:     {}
-Build Version:       {}
-Commit SHA:          {:?}
-Commit Date:         {:?}
-Commit Branch:       {:?}
-Cargo Target Triple: {}
-Cargo Profile:       {}
-",
-            env!("VERGEN_BUILD_TIMESTAMP"),
-            env!("VERGEN_BUILD_SEMVER"),
-            option_env!("VERGEN_GIT_SHA"),
-            option_env!("VERGEN_GIT_COMMIT_TIMESTAMP"),
-            option_env!("VERGEN_GIT_BRANCH"),
-            env!("VERGEN_CARGO_TARGET_TRIPLE"),
-            env!("VERGEN_CARGO_PROFILE")
-        )
-    });
-    CELL.as_str()
-}
 
 fn main() -> miette::Result<()> {
     miette::set_panic_hook();
