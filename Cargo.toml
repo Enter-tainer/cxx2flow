@@ -1,11 +1,12 @@
 [package]
 name = "cxx2flow"
-version = "0.5.3"
+version = "0.5.4"
 edition = "2018"
 authors = ["mgt <mgt@oi-wiki.org>"] 
 description = "Convert your C/C++ code to control flow chart"
 license = "MIT"
 repository = "https://github.com/Enter-tainer/cxx2flow"
+include = ["src/**/*", "LICENSE", "README.md", "build.rs"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
