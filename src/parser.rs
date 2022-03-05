@@ -4,7 +4,6 @@ use crate::ast::{Ast, AstNode};
 #[allow(unused_imports)]
 use crate::dump::dump_node;
 use crate::error::{Error, Result};
-use miette::NamedSource;
 use tree_sitter::{Node, Parser, TreeCursor};
 
 fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
@@ -27,7 +26,7 @@ fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
 
 pub fn parse(
     content: &[u8],
-    file_name: &str,
+    _file_name: &str,
     function_name: Option<String>,
 ) -> Result<Rc<RefCell<Ast>>> {
     let mut parser = Parser::new();
