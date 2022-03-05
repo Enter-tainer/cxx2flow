@@ -12,6 +12,8 @@
     "webpack-dev-server": "^3.11.2"
   },
   "dependencies": {
+    "tree-sitter-cli": "0.19.0",
+    "tree-sitter-cpp": "0.19.0",
     "web-tree-sitter": "0.19.0"
   }
 }

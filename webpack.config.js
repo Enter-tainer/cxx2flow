@@ -29,6 +29,7 @@ module.exports = {
     fallback: {
       fs: false,
       path: false,
-    }
+    },
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.wasm'],
   }
 };
