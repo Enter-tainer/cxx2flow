@@ -100,9 +100,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.0.10"
+version = "3.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a30c3bf9ff12dfe5dae53f0a96e0febcd18420d1c0e7fad77796d9d5c4b5375"
+checksum = "ced1892c55c910c1219e98d6fc8d71f6bddba7905866ce740066d8bfea859312"
 dependencies = [
  "atty",
  "bitflags",
@@ -113,14 +113,14 @@ dependencies = [
  "strsim",
  "termcolor",
  "terminal_size",
- "textwrap",
+ "textwrap 0.15.0",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "3.0.0"
+version = "3.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1b9752c030a14235a0bd5ef3ad60a1dcac8468c30921327fc8af36b20c790b9"
+checksum = "da95d038ede1a964ce99f49cbe27a7fb538d1da595e4b4f70b8c8f338d17bf16"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -245,12 +245,9 @@ checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 
 [[package]]
 name = "heck"
-version = "0.3.3"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
-dependencies = [
- "unicode-segmentation",
-]
+checksum = "2540771e65fc8cb83cd6e8a237f70c319bd5c29f78ed1084ba5d50eeac86f7f9"
 
 [[package]]
 name = "hermit-abi"
@@ -365,9 +362,9 @@ checksum = "b16bd47d9e329435e309c58469fe0791c2d0d1ba96ec0954152a5ae2b04387dc"
 
 [[package]]
 name = "miette"
-version = "3.3.0"
+version = "4.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd2adcfcced5d625bf90a958a82ae5b93231f57f3df1383fee28c9b5096d35ed"
+checksum = "e7ea7314b2a8dd373c2f2d2322e866ddea5d62ffd3d6cd7f2bb8c1467e56529f"
 dependencies = [
  "atty",
  "backtrace",
@@ -378,15 +375,16 @@ dependencies = [
  "supports-hyperlinks",
  "supports-unicode",
  "terminal_size",
- "textwrap",
+ "textwrap 0.14.2",
  "thiserror",
+ "unicode-width",
 ]
 
 [[package]]
 name = "miette-derive"
-version = "3.3.0"
+version = "4.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c01a8b61312d367ce87956bb686731f87e4c6dd5dbc550e8f06e3c24fb1f67f"
+checksum = "c547b28d4f52cae473fb5a30ca087ed7fc5d1bac150bd6dfd9ec0a4562303aa3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -661,9 +659,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0066c8d12af8b5acd21e00547c3797fde4e8677254a7ee429176ccebbe93dd80"
 dependencies = [
  "smawk",
- "terminal_size",
  "unicode-linebreak",
  "unicode-width",
+]
+
+[[package]]
+name = "textwrap"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
+dependencies = [
+ "terminal_size",
 ]
 
 [[package]]
@@ -755,12 +761,6 @@ checksum = "d54590932941a9e9266f0832deed84ebe1bf2e4c9e4a3554d393d18f5e854bf9"
 dependencies = [
  "tinyvec",
 ]
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8895849a949e7845e06bd6dc1aa51731a103c42707010a5b591c0038fb73385b"
 
 [[package]]
 name = "unicode-width"
