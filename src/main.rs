@@ -1,3 +1,9 @@
+use std::{
+    io::Write,
+    process::{self, Stdio},
+};
+
+use itertools::Itertools;
 use once_cell::sync::Lazy;
 
 use clap::Parser;
@@ -57,6 +63,9 @@ If specified, output flow chart will have curly connection line."
     )]
     curly: bool,
 
+    #[clap(long, help("Use C preprocessor."))]
+    cpp: bool,
+
     #[clap(short, long, help("Use tikz backend."))]
     tikz: bool,
 
@@ -70,11 +79,32 @@ If specified, output flow chart will have curly connection line."
     function: String,
 }
 
-
 fn main() -> miette::Result<()> {
     miette::set_panic_hook();
     let args = Args::parse();
-    let content = std::fs::read(&args.input).into_diagnostic()?;
+    let content = if args.cpp {
+        let content = std::fs::read(&args.input).into_diagnostic()?;
+        let mut cpp = process::Command::new("cpp")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .into_diagnostic()?;
+        if let Some(mut child_stdin) = cpp.stdin.take() {
+            child_stdin.write_all(&content).into_diagnostic()?;
+        }
+        cpp.wait_with_output().into_diagnostic()?.stdout
+    } else {
+        std::fs::read(&args.input).into_diagnostic()?
+    };
+    let content = Itertools::intersperse(
+        String::from_utf8(content)
+            .unwrap()
+            .lines()
+            .filter(|x| !x.starts_with('#')),
+        "\n",
+    )
+    .collect::<String>()
+    .into_bytes();
     let res = generate(
         &content,
         &args.input,

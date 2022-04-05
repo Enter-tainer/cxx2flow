@@ -2,16 +2,16 @@
 
 [简体中文](README.md) | [English](README-en.md)
 
-将 C/C++ 代码转换为流程图
+Turn your C/C++ code into flowchart
 
-## 效果
+## Demo
 
-更多效果图请参考 [GALLERY](gallery.md)
+For more demo please refer to [GALLERY](gallery.md)
 
-两种样式：
+Two different styles：
 | | |
 |:-:|:-:|
-| 折线 | 平滑 |
+| polyline | smooth |
 |![ployline](assets/polyline.svg)|![curve](assets/curve.svg)|
 
 ```cpp
@@ -30,27 +30,25 @@ inline int read() {  //快读
 }
 ```
 
-### 错误报告
+### Error reporting
 
 ![error reporting](assets/error_reporting.png)
 
-## 安装
+## Installation
 
-### 自行编译
+### Compile from source
 
 ```bash
 cargo install cxx2flow
 ```
 
-### 下载预构建二进制
+### Prebuilt binary
 
-推荐从右侧的 [Github Release](https://github.com/Enter-tainer/cxx2flow/releases) 下载对应平台的二进制文件。
+It is recommended to download prebuilt binary from [Github Release](https://github.com/Enter-tainer/cxx2flow/releases).
 
-也可以到 [GitHub Actions](https://github.com/Enter-tainer/cxx2flow/actions?query=branch%3Amaster+is%3Asuccess+event%3Apush+actor%3AEnter-tainer) 或 [Nightly.link](https://nightly.link/Enter-tainer/cxx2flow/workflows/build/master) 下载最新构建的二进制，包含 Linux, Windows 和 MacOS 版本。
+## Usage
 
-## 使用
-
-为了编译生成的 dot 文件，你需要安装 graphviz，并将其添加到 PATH 中。也可以将生成的结果复制进在线的 graphviz 服务中，如 http://magjac.com/graphviz-visual-editor/ 。
+To compile the generated dot file, you need graphviz. You can also copy the output to online graphviz services such as http://magjac.com/graphviz-visual-editor/ .
 
 ```
 cxx2flow 0.5.6
@@ -86,7 +84,7 @@ Please give me star if this application helps you!
 https://github.com/Enter-tainer/cxx2flow
 ```
 
-## 限制
+## Limitations
 
-- 对于预处理器的支持基于 `cpp` ，默认关闭，需要使用 `--cpp` 参数手动启用。如果 `PATH` 中不存在 `cpp` 则会失败。
-- 支持的控制流语句有：while，for，if，break，continue，break，return，switch, goto, do-while。
+- The support of preprocessor is based on `cpp`, and is disabled by default. `--cpp` flag is needed to enable it. It will fail if `cpp` does not exist in `PATH`.
+- Supported control flow keyword: while，for，if，break，continue，break，return，switch, goto, do-while。
