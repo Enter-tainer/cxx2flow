@@ -36,7 +36,7 @@ pub enum Error {
         #[label("this is the name of your target function")]
         range: SourceSpan,
     },
-    
+
     #[error("declarator not found")]
     #[diagnostic(
         code(cxx2flow::declarator_not_found),

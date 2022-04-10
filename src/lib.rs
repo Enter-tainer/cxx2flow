@@ -1,10 +1,10 @@
 mod ast;
-mod dot;
+mod display;
 mod dump;
 pub mod error;
 mod graph;
 mod parser;
-mod tikz;
+use display::{dot::Dot, tikz::Tikz, GraphDisplay, GraphDisplayBackend};
 use error::Result;
 pub fn generate(
     content: &[u8],
@@ -17,9 +17,10 @@ pub fn generate(
     // dbg!(&ast);
     let graph = graph::from_ast(ast, &String::from_utf8(content.to_vec())?, file_name)?;
     // dbg!(&graph);
-    if tikz {
-        tikz::from_graph(&graph, curly)
+    let display: GraphDisplayBackend = if tikz {
+        Tikz::new().into()
     } else {
-        dot::from_graph(&graph, curly)
-    }
+        Dot::new(curly).into()
+    };
+    display.from_graph(&graph)
 }
