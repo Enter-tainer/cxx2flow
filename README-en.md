@@ -77,6 +77,7 @@ OPTIONS:
 Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
 
 EXAMPLES:
+    cat main.cpp | cxx2flow | dot -Tsvg -o test.svg
     cxx2flow test.cpp | dot -Tpng -o test.png
     cxx2flow main.cpp my_custom_func | dot -Tsvg -o test.svg
 
