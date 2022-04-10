@@ -10,7 +10,8 @@ use std::collections::HashMap;
 use std::{cell::RefCell, rc::Rc};
 #[derive(Debug, PartialEq, Clone)]
 pub enum GraphNodeType {
-    Dummy, // dummy nodes will be removed eventually
+    /// Dummy nodes will be removed eventually
+    Dummy,
     Begin,
     End,
     Node(String),

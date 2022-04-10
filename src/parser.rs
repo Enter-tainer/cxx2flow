@@ -247,7 +247,7 @@ fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>
     Ok(res)
 }
 
-// return first child, or return the case label
+/// return first child, or return the case label
 fn get_case_child_and_label<'a>(
     mut case_stat: tree_sitter::TreeCursor<'a>,
     content: &[u8],

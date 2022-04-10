@@ -3,47 +3,47 @@ use std::{cell::RefCell, ops::Range, rc::Rc};
 #[derive(Debug)]
 pub enum AstNode {
     Dummy,
+    /// Children
     Compound(Vec<Rc<RefCell<Ast>>>),
-    // Children
+    /// Content
     Stat(String),
-    // Content
+    /// Content
     Continue(String),
-    // Content
+    /// Content
     Break(String),
-    // Content
+    /// Content
     Return(String),
-    // Content
+    /// Condition, Children1, Children2
     If {
         cond: String,
         body: Rc<RefCell<Ast>>,
         otherwise: Option<Rc<RefCell<Ast>>>,
     },
-    // Condition, Children1, Children2
+    /// Condition, Children
     While {
         cond: String,
         body: Rc<RefCell<Ast>>,
     },
-    // Condition, Children
+    /// Condition, Children
     DoWhile {
         cond: String,
         body: Rc<RefCell<Ast>>,
     },
-    // Condition, Children
+    /// Init, Condition, Update, Children
     For {
         init: String,
         cond: String,
         upd: String,
         body: Rc<RefCell<Ast>>,
     },
-    // Init, Condition, Update, Children
+    /// Condition, Children, Body
     Switch {
         cond: String,
         cases: Vec<String>,
         body: Rc<RefCell<Ast>>,
     },
-    // Condition, Children
+    /// Label Name
     Goto(String),
-    // Label Name
 }
 #[derive(Debug)]
 pub struct Ast {
