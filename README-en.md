@@ -51,15 +51,16 @@ It is recommended to download prebuilt binary from [Github Release](https://gith
 To compile the generated dot file, you need graphviz. You can also copy the output to online graphviz services such as http://magjac.com/graphviz-visual-editor/ .
 
 ```
-cxx2flow 0.5.6
+cxx2flow 0.5.7
 mgt <mgt@oi-wiki.org>
 Convert your C/C++ code to control flow chart
 
 USAGE:
-    cxx2flow [OPTIONS] <INPUT> [FUNCTION]
+    cxx2flow [OPTIONS] [ARGS]
 
 ARGS:
-    <INPUT>       Sets the input file. e.g. test.cpp
+    <INPUT>       Sets the path of the input file. e.g. test.cpp
+                  If not specified, cxx2flow will read from stdin.
     <FUNCTION>    The function you want to convert. e.g. main [default: main]
 
 OPTIONS:
