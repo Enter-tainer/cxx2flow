@@ -1,4 +1,5 @@
 mod ast;
+pub mod cli;
 mod display;
 mod dump;
 pub mod error;
