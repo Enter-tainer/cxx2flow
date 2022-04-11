@@ -114,7 +114,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
         }
         AstNode::Stat(s) => {
             // local_source -> current -> local_sink
-            let current = context.graph.add_node(GraphNodeType::Node(s.clone()));
+            let current = context.graph.add_node(GraphNodeType::Node(s.string.clone()));
             context
                 .graph
                 .add_edge(local_source, current, EdgeType::Normal);
@@ -154,7 +154,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
         }
         AstNode::Return(s) => {
             // local_source -> current -> global_end
-            let current = context.graph.add_node(GraphNodeType::Node(s.clone()));
+            let current = context.graph.add_node(GraphNodeType::Node(s.string.clone()));
             context
                 .graph
                 .add_edge(local_source, current, EdgeType::Normal);
@@ -169,7 +169,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
         } => {
             // local_source -> cond -> ---Y--> sub_source -> [...body...] -> sub_sink---------------v
             //                         ---N--> sub_source1 -> Option<[...otherwise...]> -> sub_sink -> local_sink
-            let cond = context.graph.add_node(GraphNodeType::Choice(cond.clone()));
+            let cond = context.graph.add_node(GraphNodeType::Choice(cond.string.clone()));
             let sub_source = context.graph.add_node(GraphNodeType::Dummy);
             let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
             context.graph.add_edge(local_source, cond, EdgeType::Normal);
@@ -213,7 +213,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
             //           local_sink
             // continue: jump to cond
             // break: jump to local_sink
-            let cond = context.graph.add_node(GraphNodeType::Choice(cond.clone()));
+            let cond = context.graph.add_node(GraphNodeType::Choice(cond.string.clone()));
             let sub_source = context.graph.add_node(GraphNodeType::Dummy);
             let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
             context.graph.add_edge(local_source, cond, EdgeType::Normal);
@@ -242,7 +242,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
             // break: jump to local_sink
             let sub_source = context.graph.add_node(GraphNodeType::Dummy);
             let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
-            let cond = context.graph.add_node(GraphNodeType::Choice(cond.clone()));
+            let cond = context.graph.add_node(GraphNodeType::Choice(cond.string.clone()));
             context
                 .graph
                 .add_edge(local_source, sub_source, EdgeType::Normal);
@@ -278,9 +278,9 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
             // break: jump to local_sink
             let sub_source = context.graph.add_node(GraphNodeType::Dummy);
             let sub_sink = context.graph.add_node(GraphNodeType::Dummy);
-            let cond = context.graph.add_node(GraphNodeType::Choice(cond.clone()));
-            let init = context.graph.add_node(GraphNodeType::Node(init.clone()));
-            let upd = context.graph.add_node(GraphNodeType::Node(upd.clone()));
+            let cond = context.graph.add_node(GraphNodeType::Choice(cond.string.clone()));
+            let init = context.graph.add_node(GraphNodeType::Node(init.string.clone()));
+            let upd = context.graph.add_node(GraphNodeType::Node(upd.string.clone()));
             context.graph.add_edge(local_source, init, EdgeType::Normal);
             context.graph.add_edge(init, cond, EdgeType::Normal);
             context
@@ -313,7 +313,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
                 .map(|c| (c.clone(), context.graph.add_node(GraphNodeType::Dummy)))
                 .collect();
             let table_start = generate_jump_table(
-                cond,
+                &cond.string,
                 &mut context.graph,
                 &mut cases.iter().filter(|x| *x != "default").with_position(),
                 &case_goto_targets,
