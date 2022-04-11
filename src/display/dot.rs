@@ -78,6 +78,9 @@ impl GraphDisplay for Dot {
                     )
                     .as_str(),
                 ),
+                crate::graph::EdgeType::FunctionCall => res.push_str(
+                    format!("D{} -> D{} [style=\"dotted\"];\n", i.source().index(), i.target().index()).as_str(),
+                ),
             };
         }
         res.push_str("}\n");

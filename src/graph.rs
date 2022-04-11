@@ -21,6 +21,7 @@ pub enum GraphNodeType {
 #[derive(Debug, Clone, Copy)]
 pub enum EdgeType {
     Normal,
+    FunctionCall,
     Branch(bool),
 }
 
@@ -77,7 +78,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
     match &ast.node {
         AstNode::Dummy => {
             return Err(Error::UnexpectedDummyAstNode {
-                src: NamedSource::new(file_name.to_string(), source.to_string()),
+                src: NamedSource::new(file_name, source.to_string()),
                 range: ast.range.clone().into(),
             })
         }
@@ -131,7 +132,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
             context.graph.add_edge(
                 current,
                 context.continue_target.ok_or(Error::UnexpectedContinue {
-                    src: NamedSource::new(file_name.to_string(), source.to_string()),
+                    src: NamedSource::new(file_name, source.to_string()),
                     range: ast.range.clone().into(),
                 })?,
                 EdgeType::Normal,
@@ -146,7 +147,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
             context.graph.add_edge(
                 current,
                 context.break_target.ok_or(Error::UnexpectedBreak {
-                    src: NamedSource::new(file_name.to_string(), source.to_string()),
+                    src: NamedSource::new(file_name, source.to_string()),
                     range: ast.range.clone().into(),
                 })?,
                 EdgeType::Normal,

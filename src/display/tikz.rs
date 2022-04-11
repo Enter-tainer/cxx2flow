@@ -81,7 +81,7 @@ impl GraphDisplay for Tikz {
         }
         for i in graph.edge_references() {
             match i.weight() {
-                crate::graph::EdgeType::Normal => res.push_str(
+                crate::graph::EdgeType::Normal | crate::graph::EdgeType::FunctionCall => res.push_str(
                     format!(
                         "\\draw (D{}) edge[->] (D{});\n",
                         i.source().index(),
