@@ -43,17 +43,7 @@ pub fn parse(
     let tree = parser.parse(&content, None).unwrap();
     let mut cursor = tree.walk();
     cursor.goto_first_child();
-    let mut functions: Vec<Node> = Vec::new();
-    loop {
-        let node = cursor.node();
-        let node = filter_ast_first(node, "function_definition");
-        if let Some(node) = node {
-            functions.push(node);
-        }
-        if !cursor.goto_next_sibling() {
-            break;
-        }
-    }
+    let functions: Vec<Node> = filter_ast(tree.root_node(), "function_definition");
     let target_function = function_name.unwrap_or_else(|| "main".to_string());
     for i in functions {
         cursor.reset(i);
