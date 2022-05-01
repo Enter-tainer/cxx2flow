@@ -48,6 +48,12 @@ cargo install cxx2flow
 
 也可以到 [GitHub Actions](https://github.com/Enter-tainer/cxx2flow/actions?query=branch%3Amaster+is%3Asuccess+event%3Apush+actor%3AEnter-tainer) 或 [Nightly.link](https://nightly.link/Enter-tainer/cxx2flow/workflows/build/master) 下载最新构建的二进制，包含 Linux, Windows 和 MacOS 版本。
 
+### 使用 GUI 版本
+
+对于没有命令行使用经验的用户，推荐下载使用基于 tauri 编写的 GUI 版本。 https://github.com/Enter-tainer/cxx2flow-gui/releases
+
+![gui](https://github.com/Enter-tainer/cxx2flow-gui/raw/master/assets/2022-05-01-16-37-32.png)
+
 ## 使用
 
 为了编译生成的 dot 文件，你需要安装 graphviz，并将其添加到 PATH 中。也可以将生成的结果复制进在线的 graphviz 服务中，如 http://magjac.com/graphviz-visual-editor/ 。
