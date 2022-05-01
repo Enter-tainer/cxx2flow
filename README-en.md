@@ -46,6 +46,13 @@ cargo install cxx2flow
 
 It is recommended to download prebuilt binary from [Github Release](https://github.com/Enter-tainer/cxx2flow/releases).
 
+### GUI version
+
+For those who are not familiar with command line, I recommend the GUI version of cxx2flow. https://github.com/Enter-tainer/cxx2flow-gui/releases
+
+![gui](https://github.com/Enter-tainer/cxx2flow-gui/raw/master/assets/2022-05-01-16-37-32.png)
+
+
 ## Usage
 
 To compile the generated dot file, you need graphviz. You can also copy the output to online graphviz services such as http://magjac.com/graphviz-visual-editor/ .
