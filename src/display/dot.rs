@@ -18,7 +18,7 @@ impl Dot {
 }
 
 impl GraphDisplay for Dot {
-    fn from_graph(&self, graph: &Graph) -> Result<String> {
+    fn generate_from_graph(&self, graph: &Graph) -> Result<String> {
         let mut res = "digraph {\n".to_string();
         if !self.curly {
             res.push_str("graph [splines=polyline];\n");
@@ -43,7 +43,7 @@ impl GraphDisplay for Dot {
                     format!(
                         "D{} [shape=box, label=\"{}\"];\n",
                         id.index(),
-                        str.replace("\"", "\\\"")
+                        str.replace('\"', "\\\"")
                     )
                     .as_str(),
                 ),
@@ -51,7 +51,7 @@ impl GraphDisplay for Dot {
                     format!(
                         "D{} [shape=diamond, label=\"{}?\"];\n",
                         id.index(),
-                        str.replace("\"", "\\\"")
+                        str.replace('\"', "\\\"")
                     )
                     .as_str(),
                 ),

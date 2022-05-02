@@ -14,7 +14,7 @@ impl Tikz {
 }
 
 impl GraphDisplay for Tikz {
-    fn from_graph(&self, graph: &Graph) -> Result<String> {
+    fn generate_from_graph(&self, graph: &Graph) -> Result<String> {
         let mut res = r#"
 \documentclass[tikz,border=10pt]{standalone}
 \usepackage{ctex}

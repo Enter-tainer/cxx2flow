@@ -32,7 +32,7 @@ pub fn parse(
     let mut parser = Parser::new();
     let language = tree_sitter_cpp::language();
     parser.set_language(language)?;
-    let tree = parser.parse(&content, None).unwrap();
+    let tree = parser.parse(&content, None).ok_or(Error::TreesitterParseFailed)?;
     let mut cursor = tree.walk();
     cursor.goto_first_child();
     let mut functions: Vec<Node> = Vec::new();
@@ -49,17 +49,13 @@ pub fn parse(
     let target_function = function_name.unwrap_or_else(|| "main".to_string());
     for i in functions {
         cursor.reset(i);
-        let stats = cursor.node().child_by_field_name("body").unwrap();
-        let node = cursor.node().child_by_field_name("declarator");
-        if node.is_none() {
-            return Err(Error::DeclaratorNotFound);
-        }
-        let node = node.unwrap();
+        let stats = cursor.node().child_by_field_name("body").ok_or(Error::ChildNotFound)?;
+        let node = cursor.node().child_by_field_name("declarator").ok_or(Error::DeclaratorNotFound)?;
         let func_name = filter_ast(node, "identifier");
         if func_name.is_none() {
             continue;
         }
-        let func_name = func_name.unwrap().utf8_text(content).unwrap();
+        let func_name = func_name.unwrap().utf8_text(content)?;
         if func_name != target_function {
             continue;
         }
@@ -132,7 +128,7 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
                 let node = cursor.node();
                 let label_str = node
                     .child_by_field_name("label")
-                    .unwrap()
+                    .ok_or(Error::ChildNotFound)?
                     .utf8_text(content)?;
                 label_vec.push(label_str.to_owned());
                 cursor.goto_first_child();
@@ -206,11 +202,11 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
 }
 
 fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
-    let condition = if_stat.child_by_field_name("condition").unwrap();
+    let condition = if_stat.child_by_field_name("condition").ok_or(Error::ChildNotFound)?;
     let blk1 = if_stat.child_by_field_name("consequence");
     let blk2 = if_stat.child_by_field_name("alternative");
     let cond_str = condition.utf8_text(content)?;
-    let body = parse_stat(blk1.unwrap(), content)?;
+    let body = parse_stat(blk1.ok_or(Error::ChildNotFound)?, content)?;
 
     let otherwise = if blk2.is_some() {
         Some(parse_stat(blk2.unwrap(), content)?)
@@ -231,10 +227,10 @@ fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
 }
 
 fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
-    let condition = while_stat.child_by_field_name("condition").unwrap();
+    let condition = while_stat.child_by_field_name("condition").ok_or(Error::ChildNotFound)?;
     let body = while_stat.child_by_field_name("body");
     let cond_str = condition.utf8_text(content)?;
-    let body = parse_stat(body.unwrap(), content)?;
+    let body = parse_stat(body.ok_or(Error::ChildNotFound)?, content)?;
 
     let res = Rc::new(RefCell::new(Ast::new(
         AstNode::While {
@@ -251,23 +247,24 @@ fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>
 fn get_case_child_and_label<'a>(
     mut case_stat: tree_sitter::TreeCursor<'a>,
     content: &[u8],
-) -> (Option<TreeCursor<'a>>, String) {
+) -> Result<(Option<TreeCursor<'a>>, String)> {
     // dump_node(&case_stat.node(), None);
-    let label = String::from(if case_stat.node().child(0).unwrap().kind() == "case" {
-        case_stat
-            .node()
-            .child(1)
-            .unwrap()
-            .utf8_text(content)
-            .unwrap()
-    } else {
-        case_stat
-            .node()
-            .child(0)
-            .unwrap()
-            .utf8_text(content)
-            .unwrap()
-    });
+    let label = {
+        let tmp = if case_stat.node().child(0).ok_or(Error::ChildNotFound)?.kind() == "case" {
+            case_stat
+                .node()
+                .child(1)
+                .ok_or(Error::ChildNotFound)?
+                .utf8_text(content)?
+        } else {
+            case_stat
+                .node()
+                .child(0)
+                .ok_or(Error::ChildNotFound)?
+                .utf8_text(content)?
+        };
+        tmp.into()
+    };
     case_stat.goto_first_child();
     if case_stat.node().kind() == "case" {
         // case lit :
@@ -279,16 +276,20 @@ fn get_case_child_and_label<'a>(
     }
     while [":", "comment"].contains(&case_stat.node().kind()) {
         if !case_stat.goto_next_sibling() {
-            return (None, label);
+            return Ok((None, label));
         }
     }
     // dump_node(&case_stat.node(), None);
-    (Some(case_stat), label)
+    Ok((Some(case_stat), label))
 }
 
 fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
-    let condition = switch_stat.child_by_field_name("condition").unwrap();
-    let body = switch_stat.child_by_field_name("body").unwrap();
+    let condition = switch_stat
+        .child_by_field_name("condition")
+        .ok_or(Error::ChildNotFound)?;
+    let body = switch_stat
+        .child_by_field_name("body")
+        .ok_or(Error::ChildNotFound)?;
     let cond_str = condition.utf8_text(content)?;
     let mut stats = Vec::new();
     let mut labels = Vec::new();
@@ -298,7 +299,7 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
     cursor.goto_next_sibling(); // case statement
                                 // dbg!(cursor.node());
     loop {
-        let (child, label) = get_case_child_and_label(cursor.clone(), content);
+        let (child, label) = get_case_child_and_label(cursor.clone(), content)?;
         labels.push(label.clone());
         cases.push(label);
         if let Some(child) = child {
@@ -341,7 +342,7 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
 fn parse_goto_stat(goto_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
     let label_str = goto_stat
         .child_by_field_name("label")
-        .unwrap()
+        .ok_or(Error::ChildNotFound)?
         .utf8_text(content)?;
     Ok(Rc::new(RefCell::new(Ast::new(
         AstNode::Goto(label_str.to_owned()),
@@ -351,10 +352,12 @@ fn parse_goto_stat(goto_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> 
 }
 
 fn parse_do_while_stat(do_while_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
-    let condition = do_while_stat.child_by_field_name("condition").unwrap();
+    let condition = do_while_stat
+        .child_by_field_name("condition")
+        .ok_or(Error::ChildNotFound)?;
     let body = do_while_stat.child_by_field_name("body");
     let cond_str = condition.utf8_text(content)?;
-    let body = parse_stat(body.unwrap(), content)?;
+    let body = parse_stat(body.ok_or(Error::ChildNotFound)?, content)?;
     let res = Rc::new(RefCell::new(Ast::new(
         AstNode::DoWhile {
             cond: String::from(cond_str),

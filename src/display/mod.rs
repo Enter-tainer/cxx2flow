@@ -15,5 +15,5 @@ pub enum GraphDisplayBackend {
 }
 #[enum_dispatch(GraphDisplayBackend)]
 pub trait GraphDisplay {
-    fn from_graph(&self, graph: &Graph) -> Result<String>;
+    fn generate_from_graph(&self, graph: &Graph) -> Result<String>;
 }

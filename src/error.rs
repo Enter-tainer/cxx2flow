@@ -43,6 +43,19 @@ pub enum Error {
         help("maybe source code is incomplete, \nplease check your input")
     )]
     DeclaratorNotFound,
+    
+    #[error("child not found")]
+    #[diagnostic(
+        code(cxx2flow::child_not_found),
+        help("maybe source code is incomplete, \nplease check your input")
+    )]
+    ChildNotFound,
+    
+    #[error("treesitter parse failed")]
+    #[diagnostic(
+        code(cxx2flow::treesitter_parse_failed),
+    )]
+    TreesitterParseFailed,
 
     #[diagnostic(
         code(cxx2flow::garbage_token),

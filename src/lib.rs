@@ -23,5 +23,5 @@ pub fn generate(
     } else {
         Dot::new(curly).into()
     };
-    display.from_graph(&graph)
+    display.generate_from_graph(&graph)
 }
