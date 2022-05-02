@@ -58,7 +58,7 @@ For those who are not familiar with command line, I recommend the GUI version of
 To compile the generated dot file, you need graphviz. You can also copy the output to online graphviz services such as http://magjac.com/graphviz-visual-editor/ .
 
 ```
-cxx2flow 0.5.8
+cxx2flow 0.5.9
 mgt <mgt@oi-wiki.org>
 Convert your C/C++ code to control flow chart
 
