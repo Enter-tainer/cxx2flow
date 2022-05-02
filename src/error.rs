@@ -25,6 +25,13 @@ pub enum Error {
     #[diagnostic(code(cxx2flow::from_utf8), help("error with UTF-8 decoding"))]
     FromUTF8(#[from] std::string::FromUtf8Error),
 
+    #[error("transparent")]
+    #[diagnostic(
+        code(cxx2flow::hashchain_insert_failed),
+        help("hashchain insert failed")
+    )]
+    InsertFailed(#[from] hash_chain::Error),
+
     #[error("target function not found")]
     #[diagnostic(
         code(cxx2flow::target_function_not_found),

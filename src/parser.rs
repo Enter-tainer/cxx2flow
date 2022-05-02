@@ -217,8 +217,8 @@ fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
     let cond_str = condition.utf8_text(content)?;
     let body = parse_stat(blk1.ok_or(Error::ChildNotFound)?, content)?;
 
-    let otherwise = if blk2.is_some() {
-        Some(parse_stat(blk2.unwrap(), content)?)
+    let otherwise = if let Some(blk2) = blk2 {
+        Some(parse_stat(blk2, content)?)
     } else {
         None
     };

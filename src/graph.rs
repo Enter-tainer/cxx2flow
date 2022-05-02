@@ -68,7 +68,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
                 context.graph.add_edge(*v, local_source, EdgeType::Normal);
             } else {
                 let v = context.graph.add_node(GraphNodeType::Dummy);
-                context.goto_target.insert_at(0, i.clone(), v).unwrap();
+                context.goto_target.insert_at(0, i.clone(), v)?;
                 // 0 is the global hashmap, goto labels should be put in hashmap 0
                 context.graph.add_edge(v, local_source, EdgeType::Normal);
             }
@@ -348,7 +348,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
                     .add_edge(local_source, *target, EdgeType::Normal);
             } else {
                 let v = context.graph.add_node(GraphNodeType::Dummy);
-                context.goto_target.insert_at(0, t.clone(), v).unwrap();
+                context.goto_target.insert_at(0, t.clone(), v)?;
                 context.graph.add_edge(local_source, v, EdgeType::Normal);
             }
         }
