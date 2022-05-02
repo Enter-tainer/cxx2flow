@@ -1,5 +1,5 @@
-use once_cell::sync::Lazy;
 use clap::Parser;
+use once_cell::sync::Lazy;
 
 static LONG_VERSION: Lazy<String> = Lazy::new(|| {
     format!(
@@ -61,8 +61,10 @@ If specified, output flow chart will have curly connection line."
     #[clap(short, long, help("Use tikz backend."))]
     pub tikz: bool,
 
-    #[clap(help("Sets the path of the input file. e.g. test.cpp
-If not specified, cxx2flow will read from stdin."))]
+    #[clap(help(
+        "Sets the path of the input file. e.g. test.cpp
+If not specified, cxx2flow will read from stdin."
+    ))]
     pub input: Option<String>,
 
     #[clap(

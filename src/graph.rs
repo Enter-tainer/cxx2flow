@@ -393,9 +393,16 @@ where
                 }
             }
         };
-        return cur;
+        cur
+    } else {
+        let cur = graph.add_node(GraphNodeType::Dummy);
+        if *has_default {
+            graph.add_edge(cur, case_goto_targets["default"], EdgeType::Normal);
+        } else {
+            graph.add_edge(cur, *sink, EdgeType::Normal);
+        }
+        cur
     }
-    unreachable!();
 }
 
 fn remove_zero_in_degree_nodes(graph: &mut Graph, _source: &str) -> bool {

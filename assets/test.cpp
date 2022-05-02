@@ -230,6 +230,11 @@ void test11() {
   return 0;
 }
 
+void incomplete_switch() {
+  // should error
+  switch (c) { default }
+}
+
 int main() {
   int n = read(), m = read();
   for (int i = 1; i <= n; i++) f[i][0] = read();

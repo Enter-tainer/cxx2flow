@@ -19,7 +19,9 @@ fn main() -> miette::Result<()> {
             content = std::fs::read(file_name).into_diagnostic()?;
         }
         None => {
-            std::io::stdin().read_to_end(&mut content).into_diagnostic()?;
+            std::io::stdin()
+                .read_to_end(&mut content)
+                .into_diagnostic()?;
         }
     };
     let content = if args.cpp {

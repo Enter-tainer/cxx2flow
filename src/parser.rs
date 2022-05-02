@@ -32,7 +32,9 @@ pub fn parse(
     let mut parser = Parser::new();
     let language = tree_sitter_cpp::language();
     parser.set_language(language)?;
-    let tree = parser.parse(&content, None).ok_or(Error::TreesitterParseFailed)?;
+    let tree = parser
+        .parse(&content, None)
+        .ok_or(Error::TreesitterParseFailed)?;
     let mut cursor = tree.walk();
     cursor.goto_first_child();
     let mut functions: Vec<Node> = Vec::new();
@@ -49,8 +51,14 @@ pub fn parse(
     let target_function = function_name.unwrap_or_else(|| "main".to_string());
     for i in functions {
         cursor.reset(i);
-        let stats = cursor.node().child_by_field_name("body").ok_or(Error::ChildNotFound)?;
-        let node = cursor.node().child_by_field_name("declarator").ok_or(Error::DeclaratorNotFound)?;
+        let stats = cursor
+            .node()
+            .child_by_field_name("body")
+            .ok_or(Error::ChildNotFound)?;
+        let node = cursor
+            .node()
+            .child_by_field_name("declarator")
+            .ok_or(Error::DeclaratorNotFound)?;
         let func_name = filter_ast(node, "identifier");
         if func_name.is_none() {
             continue;
@@ -143,21 +151,20 @@ fn parse_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
         }
         _ => {
             let res = parse_single_stat(stat, content);
-            if let Ok(res) = res {
-                return Ok(res);
-            }
-            if let Err(msg) = res {
-                if !matches!(msg, Error::GarbageToken(_)) {
-                    return Err(msg);
-                } else {
-                    return Ok(Rc::new(RefCell::new(Ast::new(
-                        AstNode::Dummy,
-                        stat.byte_range(),
-                        None,
-                    ))));
+            match res {
+                Ok(res) => Ok(res),
+                Err(msg) => {
+                    if !matches!(msg, Error::GarbageToken(_)) {
+                        Err(msg)
+                    } else {
+                        Ok(Rc::new(RefCell::new(Ast::new(
+                            AstNode::Dummy,
+                            stat.byte_range(),
+                            None,
+                        ))))
+                    }
                 }
             }
-            unreachable!();
         }
     }
 }
@@ -202,7 +209,9 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
 }
 
 fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
-    let condition = if_stat.child_by_field_name("condition").ok_or(Error::ChildNotFound)?;
+    let condition = if_stat
+        .child_by_field_name("condition")
+        .ok_or(Error::ChildNotFound)?;
     let blk1 = if_stat.child_by_field_name("consequence");
     let blk2 = if_stat.child_by_field_name("alternative");
     let cond_str = condition.utf8_text(content)?;
@@ -227,7 +236,9 @@ fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
 }
 
 fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
-    let condition = while_stat.child_by_field_name("condition").ok_or(Error::ChildNotFound)?;
+    let condition = while_stat
+        .child_by_field_name("condition")
+        .ok_or(Error::ChildNotFound)?;
     let body = while_stat.child_by_field_name("body");
     let cond_str = condition.utf8_text(content)?;
     let body = parse_stat(body.ok_or(Error::ChildNotFound)?, content)?;
@@ -250,7 +261,13 @@ fn get_case_child_and_label<'a>(
 ) -> Result<(Option<TreeCursor<'a>>, String)> {
     // dump_node(&case_stat.node(), None);
     let label = {
-        let tmp = if case_stat.node().child(0).ok_or(Error::ChildNotFound)?.kind() == "case" {
+        let tmp = if case_stat
+            .node()
+            .child(0)
+            .ok_or(Error::ChildNotFound)?
+            .kind()
+            == "case"
+        {
             case_stat
                 .node()
                 .child(1)
