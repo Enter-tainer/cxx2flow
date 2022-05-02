@@ -1,27 +1,35 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, collections::HashSet};
 
-use crate::ast::{Ast, AstNode};
+use crate::ast::{filter_ast, filter_ast_first, Ast, AstNode, Expr};
 #[allow(unused_imports)]
 use crate::dump::dump_node;
 use crate::error::{Error, Result};
+use itertools::Itertools;
 use tree_sitter::{Node, Parser, TreeCursor};
 
-fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
-    if node.kind() == kind {
-        return Some(node);
-    }
-    let mut cursor = node.walk();
-    if cursor.goto_first_child() {
-        loop {
-            if let Some(v) = filter_ast(cursor.node(), kind) {
-                return Some(v);
+impl<'a> Expr {
+    pub fn new(content: &[u8], node: Option<&Node<'a>>) -> Self {
+        match node {
+            Some(node) => {
+                let string = node.utf8_text(content).unwrap().to_string();
+                let func_call = filter_ast(*node, "call_expression")
+                    .into_iter()
+                    .map(|x| {
+                        x.child_by_field_name("function")
+                            .unwrap()
+                            .utf8_text(content)
+                            .unwrap()
+                            .to_string()
+                    })
+                    .collect();
+                Expr { string, func_call }
             }
-            if !cursor.goto_next_sibling() {
-                break;
-            }
+            None => Expr {
+                string: "".to_string(),
+                func_call: HashSet::new(),
+            },
         }
     }
-    None
 }
 
 pub fn parse(
@@ -35,17 +43,7 @@ pub fn parse(
     let tree = parser.parse(&content, None).unwrap();
     let mut cursor = tree.walk();
     cursor.goto_first_child();
-    let mut functions: Vec<Node> = Vec::new();
-    loop {
-        let node = cursor.node();
-        let node = filter_ast(node, "function_definition");
-        if let Some(node) = node {
-            functions.push(node);
-        }
-        if !cursor.goto_next_sibling() {
-            break;
-        }
-    }
+    let functions: Vec<Node> = filter_ast(tree.root_node(), "function_definition");
     let target_function = function_name.unwrap_or_else(|| "main".to_string());
     for i in functions {
         cursor.reset(i);
@@ -55,7 +53,7 @@ pub fn parse(
             return Err(Error::DeclaratorNotFound);
         }
         let node = node.unwrap();
-        let func_name = filter_ast(node, "identifier");
+        let func_name = filter_ast_first(node, "identifier");
         if func_name.is_none() {
             continue;
         }
@@ -181,7 +179,7 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
         "return_statement" => {
             let str = stat.utf8_text(content)?;
             Ok(Rc::new(RefCell::new(Ast::new(
-                AstNode::Return(String::from(str)),
+                AstNode::Return(Expr::new(content, Some(&stat))),
                 stat.byte_range(),
                 None,
             ))))
@@ -195,7 +193,7 @@ fn parse_single_stat(stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
         "expression_statement" | "declaration" => {
             let str = stat.utf8_text(content)?;
             Ok(Rc::new(RefCell::new(Ast::new(
-                AstNode::Stat(String::from(str)),
+                AstNode::Stat(Expr::new(content, Some(&stat))),
                 stat.byte_range(),
                 None,
             ))))
@@ -220,7 +218,7 @@ fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
 
     let res = Rc::new(RefCell::new(Ast::new(
         AstNode::If {
-            cond: String::from(cond_str),
+            cond: Expr::new(content, Some(&condition)),
             body,
             otherwise,
         },
@@ -238,7 +236,7 @@ fn parse_while_stat(while_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>
 
     let res = Rc::new(RefCell::new(Ast::new(
         AstNode::While {
-            cond: String::from(cond_str),
+            cond: Expr::new(content, Some(&condition)),
             body,
         },
         while_stat.byte_range(),
@@ -328,7 +326,7 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
     )));
     let res = Rc::new(RefCell::new(Ast::new(
         AstNode::Switch {
-            cond: String::from(cond_str),
+            cond: Expr::new(content, Some(&condition)),
             cases,
             body: inner,
         },
@@ -357,7 +355,7 @@ fn parse_do_while_stat(do_while_stat: Node, content: &[u8]) -> Result<Rc<RefCell
     let body = parse_stat(body.unwrap(), content)?;
     let res = Rc::new(RefCell::new(Ast::new(
         AstNode::DoWhile {
-            cond: String::from(cond_str),
+            cond: Expr::new(content, Some(&condition)),
             body,
         },
         do_while_stat.byte_range(),
@@ -392,9 +390,9 @@ fn parse_for_stat(for_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
     let body = parse_stat(cursor.node(), content)?;
     let res = Rc::new(RefCell::new(Ast::new(
         AstNode::For {
-            init: init_str,
-            cond: cond_str,
-            upd: update_str,
+            init: Expr::new(content, init.as_ref()),
+            cond: Expr::new(content, cond.as_ref()),
+            upd: Expr::new(content, update.as_ref()),
             body,
         },
         for_stat.byte_range(),

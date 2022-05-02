@@ -15,7 +15,7 @@ pub fn generate(
     tikz: bool,
 ) -> Result<String> {
     let ast = parser::parse(content, file_name, function_name)?;
-    // dbg!(&ast);
+    dbg!(&ast);
     let graph = graph::from_ast(ast, &String::from_utf8(content.to_vec())?, file_name)?;
     // dbg!(&graph);
     let display: GraphDisplayBackend = if tikz {
