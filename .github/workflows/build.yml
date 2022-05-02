@@ -15,9 +15,9 @@ jobs:
           - os: windows-latest
             artifact_name: cxx2flow.exe
             asset_name: cxx2flow-windows-amd64.exe
-          - os: macos-latest
-            artifact_name: cxx2flow
-            asset_name: cxx2flow-macos-amd64
+          # - os: macos-latest
+            # artifact_name: cxx2flow
+            # asset_name: cxx2flow-macos-amd64
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/cargo@v1
