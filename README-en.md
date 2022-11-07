@@ -97,3 +97,4 @@ https://github.com/Enter-tainer/cxx2flow
 
 - The support of preprocessor is based on `cpp`, and is disabled by default. `--cpp` flag is needed to enable it. It will fail if `cpp` does not exist in `PATH`.
 - Supported control flow keyword: while，for，if，break，continue，break，return，switch, goto, do-while。
+- Very basic support for range based loop in C++ 11.

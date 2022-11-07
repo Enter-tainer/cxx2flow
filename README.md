@@ -98,3 +98,4 @@ https://github.com/Enter-tainer/cxx2flow
 
 - 对于预处理器的支持基于 `cpp` ，默认关闭，需要使用 `--cpp` 参数手动启用。如果 `PATH` 中不存在 `cpp` 则会失败。
 - 支持的控制流语句有：while，for，if，break，continue，break，return，switch, goto, do-while。
+- 对 range for 有基本支持。部分情况下，受到 tree-sitter-cpp 能力限制，会出现一些问题
