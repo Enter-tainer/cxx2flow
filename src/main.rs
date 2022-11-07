@@ -1,5 +1,5 @@
-use clap::StructOpt;
-use cxx2flow::cli::Args;
+use cxx2flow::{cli::Args, dump, error::Error};
+use tree_sitter::Parser;
 use std::{
     io::{Read, Write},
     process::{self, Stdio},
@@ -12,7 +12,7 @@ use miette::IntoDiagnostic;
 
 fn main() -> miette::Result<()> {
     miette::set_panic_hook();
-    let args = Args::parse();
+    let args = <Args as clap::Parser>::parse();
     let mut content: Vec<u8> = Vec::new();
     match args.input {
         Some(ref file_name) => {
@@ -46,6 +46,16 @@ fn main() -> miette::Result<()> {
     )
     .collect::<String>()
     .into_bytes();
+    if args.dump_ast {
+        let mut parser = Parser::new();
+        let language = tree_sitter_cpp::language();
+        parser.set_language(language).map_err(|_|Error::TreesitterParseFailed)?;
+        let tree = parser
+            .parse(&content, None)
+            .ok_or(Error::TreesitterParseFailed)?;
+        dump::dump_node(&tree.root_node(), &String::from_utf8(content).unwrap());
+        return Ok(());
+    }
     let res = generate(
         &content,
         &args.input.unwrap_or_else(|| "stdin".to_owned()),

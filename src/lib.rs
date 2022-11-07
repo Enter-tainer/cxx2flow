@@ -1,8 +1,8 @@
 mod ast;
 pub mod cli;
 mod display;
-mod dump;
 pub mod error;
+pub mod dump;
 mod graph;
 mod parser;
 use display::{dot::Dot, tikz::Tikz, GraphDisplay, GraphDisplayBackend};

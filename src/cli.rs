@@ -61,6 +61,9 @@ If specified, output flow chart will have curly connection line."
     #[clap(short, long, help("Use tikz backend."))]
     pub tikz: bool,
 
+    #[clap(short, long, help("Dump AST(For debug purpose only)."))]
+    pub dump_ast: bool,
+
     #[clap(help(
         "Sets the path of the input file. e.g. test.cpp
 If not specified, cxx2flow will read from stdin."
