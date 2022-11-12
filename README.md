@@ -59,28 +59,26 @@ cargo install cxx2flow
 为了编译生成的 dot 文件，你需要安装 graphviz，并将其添加到 PATH 中。也可以将生成的结果复制进在线的 graphviz 服务中，如 http://magjac.com/graphviz-visual-editor/ 。
 
 ```
-cxx2flow 0.5.9
-mgt <mgt@oi-wiki.org>
 Convert your C/C++ code to control flow chart
 
-USAGE:
-    cxx2flow [OPTIONS] [ARGS]
+Usage: cxx2flow [OPTIONS] [INPUT] [FUNCTION]
 
-ARGS:
-    <INPUT>       Sets the path of the input file. e.g. test.cpp
-                  If not specified, cxx2flow will read from stdin.
-    <FUNCTION>    The function you want to convert. e.g. main [default: main]
+Arguments:
+  [INPUT]     Sets the path of the input file. e.g. test.cpp
+              If not specified, cxx2flow will read from stdin.
+  [FUNCTION]  The function you want to convert. e.g. main [default: main]
 
-OPTIONS:
-    -c, --curly              Sets the style of the flow chart.
-                             If specified, output flow chart will have curly connection line.
-        --cpp                Use C preprocessor.
-    -h, --help               Print help information
-    -o, --output <OUTPUT>    Sets the output file.
-                             If not specified, result will be directed to stdout.
-                             e.g. graph.dot
-    -t, --tikz               Use tikz backend.
-    -V, --version            Print version information
+Options:
+  -o, --output <OUTPUT>  Sets the output file.
+                         If not specified, result will be directed to stdout.
+                         e.g. graph.dot
+  -c, --curly            Sets the style of the flow chart.
+                         If specified, output flow chart will have curly connection line.
+      --cpp              Use C preprocessor.
+  -t, --tikz             Use tikz backend.
+  -d, --dump-ast         Dump AST(For debug purpose only).
+  -h, --help             Print help information
+  -V, --version          Print version information
 
 Note that you need to manually compile the dot file using graphviz to get SVG or PNG files.
 

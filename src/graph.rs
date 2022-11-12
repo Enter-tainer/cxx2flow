@@ -468,7 +468,7 @@ pub fn from_ast(ast: Rc<RefCell<Ast>>, source: &str, file_name: &str) -> Result<
     while remove_zero_in_degree_nodes(&mut ctx.graph, source) {}
     while remove_single_node(&mut ctx.graph, source, |_, t| *t == GraphNodeType::Dummy)? {}
     let remove_empty_nodes: fn(NodeIndex, &GraphNodeType) -> bool = |_, t| match t {
-        GraphNodeType::Node(t) => t.is_empty(),
+        GraphNodeType::Node(t) => t.is_empty() || t.trim() == ";",
         _ => false,
     };
     while remove_single_node(&mut ctx.graph, source, remove_empty_nodes)? {}
