@@ -33,6 +33,6 @@ miette = { version = "5.4.1", features = ["fancy"] }
 enum_dispatch = "0.3.8"
 colored = "2.0.0"
 [build-dependencies]
-vergen = "7.0.0"
+vergen = "7.4.2"
 [profile.release]
 lto = "fat"
