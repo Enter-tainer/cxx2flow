@@ -8,7 +8,7 @@ use petgraph::visit::{EdgeRef, IntoNodeReferences};
 use petgraph::EdgeDirection;
 use std::collections::HashMap;
 use std::{cell::RefCell, rc::Rc};
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum GraphNodeType {
     /// Dummy nodes will be removed eventually
     Dummy,
@@ -430,7 +430,7 @@ where
     // take first dummy node
     if let Some(node_index) = graph
         .node_references()
-        .filter(|(x, t)| predicate(*x, *t))
+        .filter(|(x, t)| predicate(*x, t))
         .map(|(x, _)| x)
         .take(1)
         .next()

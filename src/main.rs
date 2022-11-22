@@ -1,9 +1,14 @@
-use cxx2flow::{cli::Args, dump, error::Error};
-use tree_sitter::Parser;
+use cxx2flow::{
+    cli::Args,
+    display::{d2::D2, dot::Dot, tikz::Tikz},
+    dump,
+    error::Error,
+};
 use std::{
     io::{Read, Write},
     process::{self, Stdio},
 };
+use tree_sitter::Parser;
 
 use itertools::Itertools;
 
@@ -49,19 +54,27 @@ fn main() -> miette::Result<()> {
     if args.dump_ast {
         let mut parser = Parser::new();
         let language = tree_sitter_cpp::language();
-        parser.set_language(language).map_err(|_|Error::TreesitterParseFailed)?;
+        parser
+            .set_language(language)
+            .map_err(|_| Error::TreesitterParseFailed)?;
         let tree = parser
             .parse(&content, None)
             .ok_or(Error::TreesitterParseFailed)?;
         dump::dump_node(&tree.root_node(), &String::from_utf8(content).unwrap());
         return Ok(());
     }
+    let backend = if args.tikz {
+        Tikz::new().into()
+    } else if args.d2 {
+        D2::new().into()
+    } else {
+        Dot::new(args.curly).into()
+    };
     let res = generate(
         &content,
         &args.input.unwrap_or_else(|| "stdin".to_owned()),
         Some(args.function),
-        args.curly,
-        args.tikz,
+        backend,
     )?;
     if let Some(output) = args.output {
         std::fs::write(output, res).into_diagnostic()?;

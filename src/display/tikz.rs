@@ -4,7 +4,7 @@ use crate::error::{Error, Result};
 use crate::graph::{Graph, GraphNodeType};
 
 use super::GraphDisplay;
-
+#[derive(Debug, Default)]
 pub struct Tikz {}
 
 impl Tikz {

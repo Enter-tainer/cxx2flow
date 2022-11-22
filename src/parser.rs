@@ -33,7 +33,7 @@ pub fn parse(
     let language = tree_sitter_cpp::language();
     parser.set_language(language)?;
     let tree = parser
-        .parse(&content, None)
+        .parse(content, None)
         .ok_or(Error::TreesitterParseFailed)?;
     let mut cursor = tree.walk();
     cursor.goto_first_child();
@@ -425,10 +425,18 @@ fn parse_for_stat(for_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
 }
 
 fn parse_range_for_stat(range_for_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
-    let ty = range_for_stat.child_by_field_name("type").ok_or(Error::ChildNotFound)?;
-    let declarator = range_for_stat.child_by_field_name("declarator").ok_or(Error::ChildNotFound)?;
-    let range = range_for_stat.child_by_field_name("right").ok_or(Error::ChildNotFound)?;
-    let body = range_for_stat.child_by_field_name("body").ok_or(Error::ChildNotFound)?;
+    let ty = range_for_stat
+        .child_by_field_name("type")
+        .ok_or(Error::ChildNotFound)?;
+    let declarator = range_for_stat
+        .child_by_field_name("declarator")
+        .ok_or(Error::ChildNotFound)?;
+    let range = range_for_stat
+        .child_by_field_name("right")
+        .ok_or(Error::ChildNotFound)?;
+    let body = range_for_stat
+        .child_by_field_name("body")
+        .ok_or(Error::ChildNotFound)?;
     let body = parse_stat(body, content)?;
     let type_text = ty.utf8_text(content)?;
     let init_text = declarator.utf8_text(content)?;
@@ -441,10 +449,18 @@ fn parse_range_for_stat(range_for_stat: Node, content: &[u8]) -> Result<Rc<RefCe
             init: real_init_text,
             cond: real_cond_text,
             upd: real_update_text,
-            body: Rc::new(RefCell::new(Ast::new(AstNode::Compound(vec![
-                Rc::new(RefCell::new(Ast::new(AstNode::Stat(format!("{type_text} {init_text} = *{init_text}_iter")), range_for_stat.byte_range(), None))),
-                body
-            ]), range_for_stat.byte_range(), None))),
+            body: Rc::new(RefCell::new(Ast::new(
+                AstNode::Compound(vec![
+                    Rc::new(RefCell::new(Ast::new(
+                        AstNode::Stat(format!("{type_text} {init_text} = *{init_text}_iter")),
+                        range_for_stat.byte_range(),
+                        None,
+                    ))),
+                    body,
+                ]),
+                range_for_stat.byte_range(),
+                None,
+            ))),
         },
         range_for_stat.byte_range(),
         None,
