@@ -21,7 +21,7 @@ crate-type = ["lib"]
 
 [dependencies]
 thiserror = "1.0"
-clap = { version = "4.0.32", features = ["derive", "wrap_help"] }
+clap = { version = "4.1.1", features = ["derive", "wrap_help"] }
 log = "0.4.17"
 tree-sitter = "0.20.9"
 tree-sitter-cpp = "0.20.0"
