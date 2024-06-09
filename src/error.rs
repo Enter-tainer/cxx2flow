@@ -76,7 +76,7 @@ pub enum Error {
     #[error("unexpected continue")]
     UnexpectedContinue {
         #[source_code]
-        src: NamedSource,
+        src: NamedSource<String>,
         #[label("unexpected continue statement here")]
         range: SourceSpan,
     },
@@ -88,7 +88,7 @@ pub enum Error {
     #[error("unexpected break")]
     UnexpectedBreak {
         #[source_code]
-        src: NamedSource,
+        src: NamedSource<String>,
         #[label("unexpected break statement here")]
         range: SourceSpan,
     },
@@ -104,7 +104,7 @@ pub enum Error {
     )]
     UnexpectedDummyAstNode {
         #[source_code]
-        src: NamedSource,
+        src: NamedSource<String>,
         #[label("dummy ast node here")]
         range: SourceSpan,
     },

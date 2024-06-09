@@ -55,12 +55,12 @@ fn main() -> miette::Result<()> {
         let mut parser = Parser::new();
         let language = tree_sitter_cpp::language();
         parser
-            .set_language(language)
+            .set_language(&language)
             .map_err(|_| Error::TreesitterParseFailed)?;
         let tree = parser
             .parse(&content, None)
             .ok_or(Error::TreesitterParseFailed)?;
-        dump::dump_node(&tree.root_node(), &String::from_utf8(content).unwrap());
+        dump::dump_node(&tree.root_node(), &content);
         return Ok(());
     }
     let backend = if args.tikz {

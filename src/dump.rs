@@ -21,12 +21,12 @@ pub fn useful_children<'a, 'tree>(
 fn dump_node_internal(
     node: &Node,
     prefix: &str,
-    content: &str,
+    content: &[u8],
     field_name: Option<&str>,
     is_last: bool,
     is_init: bool,
 ) {
-    let node_text = node.utf8_text(content.as_bytes()).unwrap();
+    let node_text = node.utf8_text(content).unwrap();
     let start = node.start_position();
     let end = node.end_position();
     let kind = node.kind();
@@ -62,27 +62,28 @@ fn dump_node_internal(
     };
     let nodes: Vec<_> = {
         let mut cursor = node.walk();
-        useful_children(node, &mut cursor).collect_vec()
+        // useful_children(node, &mut cursor).collect_vec()
+        node.children(&mut cursor).collect_vec()
     };
     let prefix = format!("{}{}   ", prefix, if is_last { " " } else { "│" });
-    for i in nodes.into_iter().with_position() {
-        match i {
-            itertools::Position::First(n) | itertools::Position::Middle(n) => {
+    for (pos, i) in nodes.into_iter().with_position() {
+        match pos {
+            itertools::Position::First | itertools::Position::Middle => {
                 dump_node_internal(
-                    &n,
+                    &i,
                     &prefix,
                     content,
-                    node.field_name_for_child(node_to_idx[&n] as u32),
+                    node.field_name_for_child(node_to_idx[&i] as u32),
                     false,
                     false,
                 );
             }
-            itertools::Position::Last(n) | itertools::Position::Only(n) => {
+            itertools::Position::Last | itertools::Position::Only => {
                 dump_node_internal(
-                    &n,
+                    &i,
                     &prefix,
                     content,
-                    node.field_name_for_child(node_to_idx[&n] as u32),
+                    node.field_name_for_child(node_to_idx[&i] as u32),
                     true,
                     false,
                 );
@@ -92,6 +93,6 @@ fn dump_node_internal(
 }
 
 #[allow(dead_code)]
-pub fn dump_node(node: &Node, content: &str) {
+pub fn dump_node(node: &Node, content: &[u8]) {
     dump_node_internal(node, "", content, None, true, true);
 }

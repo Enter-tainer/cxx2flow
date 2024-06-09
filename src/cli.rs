@@ -1,24 +1,25 @@
 use clap::Parser;
 use once_cell::sync::Lazy;
 
+static NONE: &str = "None";
 static LONG_VERSION: Lazy<String> = Lazy::new(|| {
     format!(
         "
+Version:             {}
 Build Timestamp:     {}
-Build Version:       {}
-Commit SHA:          {:?}
-Commit Date:         {:?}
-Commit Branch:       {:?}
+Build Git Describe:  {}
+Commit SHA:          {}
+Commit Date:         {}
+Commit Branch:       {}
 Cargo Target Triple: {}
-Cargo Profile:       {}
 ",
+        env!("CARGO_PKG_VERSION"),
         env!("VERGEN_BUILD_TIMESTAMP"),
-        env!("VERGEN_BUILD_SEMVER"),
-        option_env!("VERGEN_GIT_SHA"),
-        option_env!("VERGEN_GIT_COMMIT_TIMESTAMP"),
-        option_env!("VERGEN_GIT_BRANCH"),
+        env!("VERGEN_GIT_DESCRIBE"),
+        option_env!("VERGEN_GIT_SHA").unwrap_or(NONE),
+        option_env!("VERGEN_GIT_COMMIT_TIMESTAMP").unwrap_or(NONE),
+        option_env!("VERGEN_GIT_BRANCH").unwrap_or(NONE),
         env!("VERGEN_CARGO_TARGET_TRIPLE"),
-        env!("VERGEN_CARGO_PROFILE")
     )
 });
 #[derive(Parser, Debug)]

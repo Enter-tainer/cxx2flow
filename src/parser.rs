@@ -31,7 +31,7 @@ pub fn parse(
 ) -> Result<Rc<RefCell<Ast>>> {
     let mut parser = Parser::new();
     let language = tree_sitter_cpp::language();
-    parser.set_language(language)?;
+    parser.set_language(&language)?;
     let tree = parser
         .parse(content, None)
         .ok_or(Error::TreesitterParseFailed)?;
@@ -219,7 +219,11 @@ fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
     let body = parse_stat(blk1.ok_or(Error::ChildNotFound)?, content)?;
 
     let otherwise = if let Some(blk2) = blk2 {
-        Some(parse_stat(blk2, content)?)
+        let cnt = blk2.child_count();
+        Some(parse_stat(
+            blk2.child(cnt - 1).ok_or(Error::ChildNotFound)?,
+            content,
+        )?)
     } else {
         None
     };

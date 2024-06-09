@@ -93,12 +93,12 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
                     .graph
                     .add_edge(sub_source, sub_sink, EdgeType::Normal);
             } else {
-                for i in v.iter().with_position() {
+                for (pos, i) in v.iter().with_position() {
                     context.local_source = sub_source;
                     context.local_sink = sub_sink;
-                    build_graph(&i.into_inner().borrow(), context, source, file_name)?;
-                    match i {
-                        itertools::Position::First(_) | itertools::Position::Middle(_) => {
+                    build_graph(&i.borrow(), context, source, file_name)?;
+                    match pos {
+                        itertools::Position::First | itertools::Position::Middle => {
                             sub_source = sub_sink;
                             sub_sink = context.graph.add_node(GraphNodeType::Dummy);
                         }
@@ -356,7 +356,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
     Ok(())
 }
 
-fn generate_jump_table<'a, I>(
+fn generate_jump_table<'a, I, R>(
     cond: &str,
     graph: &mut Graph,
     iter: &mut I,
@@ -365,27 +365,20 @@ fn generate_jump_table<'a, I>(
     sink: &NodeIndex,
 ) -> NodeIndex
 where
-    I: Itertools<Item = Position<&'a String>>,
+    I: Itertools<Item = (Position, R)>,
+    R: AsRef<str>,
 {
-    if let Some(i) = iter.next() {
+    if let Some((pos, i)) = iter.next() {
         // dbg!(i);
-        let cur = graph.add_node(GraphNodeType::Choice(format!(
-            "{} == {}",
-            cond,
-            i.into_inner()
-        )));
-        graph.add_edge(
-            cur,
-            case_goto_targets[i.into_inner()],
-            EdgeType::Branch(true),
-        );
-        match i {
-            itertools::Position::First(_) | itertools::Position::Middle(_) => {
+        let cur = graph.add_node(GraphNodeType::Choice(format!("{} == {}", cond, i.as_ref())));
+        graph.add_edge(cur, case_goto_targets[i.as_ref()], EdgeType::Branch(true));
+        match pos {
+            itertools::Position::First | itertools::Position::Middle => {
                 let idx =
                     generate_jump_table(cond, graph, iter, case_goto_targets, has_default, sink);
                 graph.add_edge(cur, idx, EdgeType::Branch(false));
             }
-            itertools::Position::Last(_) | itertools::Position::Only(_) => {
+            itertools::Position::Last | itertools::Position::Only => {
                 if *has_default {
                     graph.add_edge(cur, case_goto_targets["default"], EdgeType::Branch(false));
                 } else {
