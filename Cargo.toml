@@ -1,6 +1,6 @@
 [package]
 name = "cxx2flow"
-version = "0.6.1"
+version = "0.6.2"
 edition = "2021"
 authors = ["mgt <mgt@oi-wiki.org>"]
 description = "Convert your C/C++ code to control flow chart"
