@@ -1,8 +1,8 @@
 use clap::Parser;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 static NONE: &str = "None";
-static LONG_VERSION: Lazy<String> = Lazy::new(|| {
+static LONG_VERSION: LazyLock<String> = LazyLock::new(|| {
     format!(
         "
 Version:             {}
