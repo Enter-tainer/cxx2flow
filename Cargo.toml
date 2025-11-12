@@ -40,6 +40,8 @@ tree-sitter-cpp = { git = "https://github.com/tree-sitter/tree-sitter-cpp", rev 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 tree-sitter-c2rust = "0.25"
 tree-sitter-language = "0.1"
+# Note: tree-sitter-cpp is NOT in dependencies for WASM builds
+# It's cloned and compiled to WASM in build.rs using tree-sitter CLI
 [build-dependencies]
 anyhow = "1.0"
 
