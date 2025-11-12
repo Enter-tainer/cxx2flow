@@ -39,7 +39,7 @@ tree-sitter-cpp = { git = "https://github.com/tree-sitter/tree-sitter-cpp", rev 
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 tree-sitter-c2rust = "0.25"
-tree-sitter-cpp = { git = "https://github.com/tree-sitter/tree-sitter-cpp", rev = "7ce8946cae4bb25adebe5b50394f702beb007026" }
+tree-sitter-language = "0.1"
 [build-dependencies]
 anyhow = "1.0"
 

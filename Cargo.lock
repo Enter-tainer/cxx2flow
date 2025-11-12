@@ -274,6 +274,7 @@ dependencies = [
  "tree-sitter",
  "tree-sitter-c2rust",
  "tree-sitter-cpp",
+ "tree-sitter-language",
  "vergen",
  "wasm-bindgen",
 ]

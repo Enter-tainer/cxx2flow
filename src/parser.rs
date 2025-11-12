@@ -11,6 +11,20 @@ use tree_sitter::{Node, Parser, TreeCursor};
 #[cfg(target_arch = "wasm32")]
 use tree_sitter_c2rust::{Node, Parser, TreeCursor};
 
+#[cfg(target_arch = "wasm32")]
+fn get_cpp_language() -> Result<tree_sitter_c2rust::Language> {
+    use tree_sitter_language::LanguageFn;
+    
+    // Load the WASM grammar compiled at build time
+    static CPP_WASM: &[u8] = include_bytes!(env!("TREE_SITTER_CPP_WASM_PATH"));
+    
+    let language_fn = LanguageFn::from_wasm_bytes(CPP_WASM)
+        .map_err(|_| Error::TreesitterParseFailed)?;
+    
+    language_fn.call()
+        .map_err(|_| Error::TreesitterParseFailed)
+}
+
 fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
     if node.kind() == kind {
         return Some(node);
@@ -35,7 +49,13 @@ pub fn parse(
     function_name: Option<String>,
 ) -> Result<Rc<RefCell<Ast>>> {
     let mut parser = Parser::new();
+    
+    #[cfg(not(target_arch = "wasm32"))]
     let language = tree_sitter_cpp::language();
+    
+    #[cfg(target_arch = "wasm32")]
+    let language = get_cpp_language()?;
+    
     parser.set_language(&language)?;
     let tree = parser
         .parse(content, None)
