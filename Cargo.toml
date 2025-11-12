@@ -17,14 +17,12 @@ path = "src/main.rs"
 [lib]
 name = "cxx2flow"
 path = "src/lib.rs"
-crate-type = ["lib"]
+crate-type = ["lib", "cdylib"]
 
 [dependencies]
 thiserror = "1.0"
 clap = { version = "4.5.6", features = ["derive", "wrap_help"] }
 log = "0.4.21"
-tree-sitter = { version = "0.22.6", features = ["wasm"] }
-tree-sitter-cpp = { git = "https://github.com/tree-sitter/tree-sitter-cpp", rev = "7ce8946cae4bb25adebe5b50394f702beb007026" }
 petgraph = "0.6.5"
 itertools = "0.13.0"
 hash-chain = "0.3.2"
@@ -32,8 +30,20 @@ once_cell = "1.19.0"
 miette = { version = "7.2.0", features = ["fancy"] }
 enum_dispatch = "0.3.13"
 colored = "2.1.0"
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tree-sitter = "0.25.10"
+tree-sitter-cpp = { git = "https://github.com/tree-sitter/tree-sitter-cpp", rev = "7ce8946cae4bb25adebe5b50394f702beb007026" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+tree-sitter-c2rust = "0.25"
+tree-sitter-cpp = { git = "https://github.com/tree-sitter/tree-sitter-cpp", rev = "7ce8946cae4bb25adebe5b50394f702beb007026" }
 [build-dependencies]
 anyhow = "1.0"
+
+[target.'cfg(not(target_arch = "wasm32"))'.build-dependencies]
 vergen = { version = "8.3.1", features = [
   "build",
   "cargo",

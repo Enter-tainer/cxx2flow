@@ -4,7 +4,12 @@ use crate::ast::{Ast, AstNode};
 #[allow(unused_imports)]
 use crate::dump::dump_node;
 use crate::error::{Error, Result};
+
+#[cfg(not(target_arch = "wasm32"))]
 use tree_sitter::{Node, Parser, TreeCursor};
+
+#[cfg(target_arch = "wasm32")]
+use tree_sitter_c2rust::{Node, Parser, TreeCursor};
 
 fn filter_ast<'a>(node: Node<'a>, kind: &str) -> Option<Node<'a>> {
     if node.kind() == kind {
