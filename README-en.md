@@ -52,6 +52,9 @@ For those who are not familiar with command line, I recommend the GUI version of
 
 ![gui](https://github.com/Enter-tainer/cxx2flow-gui/raw/master/assets/2022-05-01-16-37-32.png)
 
+## WASM Parser Support
+
+cxx2flow now supports tree-sitter parsers compiled to WebAssembly (WASM) format. The latest tree-sitter version includes the ability to load WASM-based language parsers, which provides better portability and easier distribution of language support.
 
 ## Usage
 

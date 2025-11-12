@@ -54,6 +54,10 @@ cargo install cxx2flow
 
 ![gui](https://github.com/Enter-tainer/cxx2flow-gui/raw/master/assets/2022-05-01-16-37-32.png)
 
+## WASM 解析器支持
+
+cxx2flow 现在支持编译为 WebAssembly (WASM) 格式的 tree-sitter 解析器。最新的 tree-sitter 版本包含了加载基于 WASM 的语言解析器的能力，这提供了更好的可移植性和更容易的语言支持分发。
+
 ## 使用
 
 为了编译生成的 dot 文件，你需要安装 graphviz，并将其添加到 PATH 中。也可以将生成的结果复制进在线的 graphviz 服务中，如 http://magjac.com/graphviz-visual-editor/ 。
