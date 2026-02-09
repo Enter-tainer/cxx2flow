@@ -1,12 +1,16 @@
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    display::{dot::Dot, GraphDisplayBackend},
+    display::{GraphDisplayBackend, dot::Dot},
     generate,
 };
 
 #[wasm_bindgen]
-pub fn generate_dot(content: &str, function_name: Option<String>, curly: bool) -> Result<String, JsValue> {
+pub fn generate_dot(
+    content: &str,
+    function_name: Option<String>,
+    curly: bool,
+) -> Result<String, JsValue> {
     generate(
         content.as_bytes(),
         "input.cpp",
@@ -15,4 +19,3 @@ pub fn generate_dot(content: &str, function_name: Option<String>, curly: bool) -
     )
     .map_err(|error| JsValue::from_str(&error.to_string()))
 }
-

@@ -16,7 +16,7 @@ fn read_fixture() -> Vec<u8> {
 fn parse_tree(content: &[u8]) -> tree_sitter::Tree {
     let mut parser = Parser::new();
     parser
-        .set_language(&tree_sitter_cpp::language())
+        .set_language(&tree_sitter_cpp::LANGUAGE.into())
         .expect("failed to set tree-sitter cpp language");
     parser
         .parse(content, None)

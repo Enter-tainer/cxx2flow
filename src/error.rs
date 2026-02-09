@@ -1,3 +1,5 @@
+#![allow(unused_assignments)]
+
 use miette::{Diagnostic, NamedSource, SourceSpan};
 use petgraph::graph::NodeIndex;
 use thiserror::Error;
@@ -93,7 +95,12 @@ pub enum Error {
         range: SourceSpan,
     },
 
-    #[diagnostic(code(cxx2flow::unexpected_dummy_graph), help("dummy node found in the flow graph\nthis might be a bug, please report it to the author"))]
+    #[diagnostic(
+        code(cxx2flow::unexpected_dummy_graph),
+        help(
+            "dummy node found in the flow graph\nthis might be a bug, please report it to the author"
+        )
+    )]
     #[error("unexpected dummy graph node {:?}", petgraph::dot::Dot::new(.graph))]
     UnexpectedDummyGraphNode { graph: Graph },
 
@@ -110,7 +117,12 @@ pub enum Error {
     },
 
     #[error("unexpected outgoing edge: {node_index:?}, neighbors: {neighbors:?}, graph: {:?}", petgraph::dot::Dot::new(.graph))]
-    #[diagnostic(code(cxx2flow::unexpected_outgoing_nodes), help("usually, every dummy node only has one outgoing edge, but this node has zero or more than one outgoing edges\nthis might be a bug, please report it to the author"))]
+    #[diagnostic(
+        code(cxx2flow::unexpected_outgoing_nodes),
+        help(
+            "usually, every dummy node only has one outgoing edge, but this node has zero or more than one outgoing edges\nthis might be a bug, please report it to the author"
+        )
+    )]
     UnexpectedOutgoingEdges {
         node_index: NodeIndex,
         neighbors: Vec<NodeIndex>,

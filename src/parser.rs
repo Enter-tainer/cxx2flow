@@ -31,8 +31,7 @@ pub fn parse(
     function_name: Option<String>,
 ) -> Result<Rc<RefCell<Ast>>> {
     let mut parser = Parser::new();
-    let language = tree_sitter_cpp::language();
-    parser.set_language(&language)?;
+    parser.set_language(&tree_sitter_cpp::LANGUAGE.into())?;
     let tree = parser
         .parse(content, None)
         .ok_or(Error::TreesitterParseFailed)?;
@@ -221,8 +220,9 @@ fn parse_if_stat(if_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast>>> {
 
     let otherwise = if let Some(blk2) = blk2 {
         let cnt = blk2.child_count();
+        let child_idx = u32::try_from(cnt.saturating_sub(1)).map_err(|_| Error::ChildNotFound)?;
         Some(parse_stat(
-            blk2.child(cnt - 1).ok_or(Error::ChildNotFound)?,
+            blk2.child(child_idx).ok_or(Error::ChildNotFound)?,
             content,
         )?)
     } else {
@@ -320,7 +320,7 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
     let mut cursor = body.walk();
     cursor.goto_first_child(); // brace
     cursor.goto_next_sibling(); // case statement
-                                // dbg!(cursor.node());
+    // dbg!(cursor.node());
     loop {
         let (child, label) = get_case_child_and_label(cursor.clone(), content)?;
         labels.push(label.clone());

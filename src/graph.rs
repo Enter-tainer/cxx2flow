@@ -3,9 +3,9 @@ use crate::error::{Error, Result};
 use hash_chain::ChainMap;
 use itertools::{Itertools, Position};
 use miette::NamedSource;
+use petgraph::EdgeDirection;
 use petgraph::stable_graph::{NodeIndex, StableDiGraph};
 use petgraph::visit::{EdgeRef, IntoNodeReferences};
-use petgraph::EdgeDirection;
 use std::collections::HashMap;
 use std::{cell::RefCell, rc::Rc};
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -79,7 +79,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
             return Err(Error::UnexpectedDummyAstNode {
                 src: NamedSource::new(file_name, source.to_string()),
                 range: ast.range.clone().into(),
-            })
+            });
         }
         AstNode::Compound(v) => {
             let mut sub_source = context.graph.add_node(GraphNodeType::Dummy);
@@ -356,7 +356,7 @@ fn build_graph(ast: &Ast, context: &mut GraphContext, source: &str, file_name: &
     Ok(())
 }
 
-fn generate_jump_table<'a, I, R>(
+fn generate_jump_table<I, R>(
     cond: &str,
     graph: &mut Graph,
     iter: &mut I,

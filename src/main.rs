@@ -1,4 +1,4 @@
-use cxx2flow::{
+use cxx2flow_lib::{
     cli::Args,
     display::{d2::D2, dot::Dot, tikz::Tikz},
     dump,
@@ -12,7 +12,7 @@ use tree_sitter::Parser;
 
 use itertools::Itertools;
 
-use cxx2flow::generate;
+use cxx2flow_lib::generate;
 use miette::IntoDiagnostic;
 
 fn main() -> miette::Result<()> {
@@ -53,9 +53,8 @@ fn main() -> miette::Result<()> {
     .into_bytes();
     if args.dump_ast {
         let mut parser = Parser::new();
-        let language = tree_sitter_cpp::language();
         parser
-            .set_language(&language)
+            .set_language(&tree_sitter_cpp::LANGUAGE.into())
             .map_err(|_| Error::TreesitterParseFailed)?;
         let tree = parser
             .parse(&content, None)

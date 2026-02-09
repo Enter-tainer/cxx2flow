@@ -1,9 +1,6 @@
 use std::alloc::{
-    alloc as rust_alloc,
-    alloc_zeroed as rust_alloc_zeroed,
-    dealloc as rust_dealloc,
+    Layout, alloc as rust_alloc, alloc_zeroed as rust_alloc_zeroed, dealloc as rust_dealloc,
     realloc as rust_realloc,
-    Layout,
 };
 use std::ffi::{c_char, c_int, c_void};
 use std::ptr;

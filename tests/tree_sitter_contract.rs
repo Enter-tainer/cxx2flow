@@ -16,7 +16,7 @@ fn read_fixture() -> Vec<u8> {
 fn parse_tree(content: &[u8]) -> tree_sitter::Tree {
     let mut parser = Parser::new();
     parser
-        .set_language(&tree_sitter_cpp::language())
+        .set_language(&tree_sitter_cpp::LANGUAGE.into())
         .expect("failed to set tree-sitter cpp language");
     parser
         .parse(content, None)
@@ -116,8 +116,7 @@ fn tree_sitter_required_fields_exist() {
         "do_statement should have `body` field"
     );
 
-    let for_stmt =
-        first_child_by_kind(root, "for_statement").expect("missing for_statement node");
+    let for_stmt = first_child_by_kind(root, "for_statement").expect("missing for_statement node");
     assert!(
         for_stmt.child_by_field_name("initializer").is_some(),
         "for_statement should have `initializer` field"

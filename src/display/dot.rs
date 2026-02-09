@@ -58,7 +58,7 @@ impl GraphDisplay for Dot {
                 GraphNodeType::Dummy => {
                     return Err(Error::UnexpectedDummyGraphNode {
                         graph: graph.clone(),
-                    })
+                    });
                 } // GraphNodeType::Dummy => {} // all dummy node will be eliminated
             }
         }

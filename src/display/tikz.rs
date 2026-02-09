@@ -75,7 +75,7 @@ impl GraphDisplay for Tikz {
                 GraphNodeType::Dummy => {
                     return Err(Error::UnexpectedDummyGraphNode {
                         graph: graph.clone(),
-                    })
+                    });
                 } // all dummy node will be eliminated
             }
         }

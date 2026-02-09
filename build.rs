@@ -1,5 +1,5 @@
 use anyhow::Result;
-use vergen::EmitBuilder;
+use vergen_gitcl::{BuildBuilder, CargoBuilder, Emitter, GitclBuilder, RustcBuilder};
 
 fn main() -> Result<()> {
     let target = std::env::var("TARGET").unwrap_or_default();
@@ -25,13 +25,19 @@ fn main() -> Result<()> {
         println!("cargo:rerun-if-changed={}", wasm_sysroot.display());
     }
 
-    // Emit the instructions
-    EmitBuilder::builder()
-        .all_cargo()
-        .build_timestamp()
-        .git_sha(false)
-        .git_describe(true, true, None)
-        .all_rustc()
+    let build = BuildBuilder::default().build_timestamp(true).build()?;
+    let cargo = CargoBuilder::all_cargo()?;
+    let rustc = RustcBuilder::all_rustc()?;
+    let gitcl = GitclBuilder::default()
+        .describe(true, true, None)
+        .sha(false)
+        .build()?;
+
+    Emitter::default()
+        .add_instructions(&build)?
+        .add_instructions(&cargo)?
+        .add_instructions(&rustc)?
+        .add_instructions(&gitcl)?
         .emit()?;
     Ok(())
 }

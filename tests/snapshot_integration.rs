@@ -3,8 +3,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use cxx2flow::{
-    display::{d2::D2, dot::Dot, tikz::Tikz, GraphDisplayBackend},
+use cxx2flow_lib::{
+    display::{GraphDisplayBackend, d2::D2, dot::Dot, tikz::Tikz},
     generate,
 };
 use libtest_mimic::{Arguments, Failed, Trial};
@@ -93,7 +93,10 @@ fn project_root() -> PathBuf {
 }
 
 fn snapshot_fixtures_dir() -> PathBuf {
-    project_root().join("tests").join("fixtures").join("snapshots")
+    project_root()
+        .join("tests")
+        .join("fixtures")
+        .join("snapshots")
 }
 
 fn error_fixtures_dir() -> PathBuf {
@@ -136,8 +139,9 @@ fn collect_snapshot_cases() -> Vec<FixtureCase> {
                 .and_then(|value| value.to_str())
                 .unwrap_or_else(|| panic!("invalid fixture filename: {}", path.display()));
             let (name, function) = split_fixture_stem(stem);
-            let source = fs::read(&path)
-                .unwrap_or_else(|error| panic!("failed to read fixture {}: {error}", path.display()));
+            let source = fs::read(&path).unwrap_or_else(|error| {
+                panic!("failed to read fixture {}: {error}", path.display())
+            });
 
             FixtureCase {
                 name,
@@ -161,8 +165,9 @@ fn read_error_fixture(name: &str) -> (Vec<u8>, String) {
     ];
     for path in candidates {
         if path.exists() {
-            let content = fs::read(&path)
-                .unwrap_or_else(|error| panic!("failed to read error fixture {}: {error}", path.display()));
+            let content = fs::read(&path).unwrap_or_else(|error| {
+                panic!("failed to read error fixture {}: {error}", path.display())
+            });
             let file_name = path
                 .file_name()
                 .and_then(|value| value.to_str())
@@ -210,7 +215,10 @@ fn run_snapshot_case(case: FixtureCase, backend: BackendKind) -> Result<(), Fail
             format!("dot_curly__{}", case.name),
             render(&case, Dot::new(true).into()),
         ),
-        BackendKind::D2 => (format!("d2__{}", case.name), render(&case, D2::new().into())),
+        BackendKind::D2 => (
+            format!("d2__{}", case.name),
+            render(&case, D2::new().into()),
+        ),
         BackendKind::Tikz => (
             format!("tikz__{}", case.name),
             render(&case, Tikz::new().into()),
@@ -243,7 +251,9 @@ fn build_trials() -> Vec<Trial> {
         }
         let case = case.clone();
         let name = format!("dot_polyline::{}", case.name);
-        trials.push(Trial::test(name, move || run_snapshot_case(case, BackendKind::DotPolyline)));
+        trials.push(Trial::test(name, move || {
+            run_snapshot_case(case, BackendKind::DotPolyline)
+        }));
     }
 
     for case in &cases {
@@ -252,7 +262,9 @@ fn build_trials() -> Vec<Trial> {
         }
         let case = case.clone();
         let name = format!("d2::{}", case.name);
-        trials.push(Trial::test(name, move || run_snapshot_case(case, BackendKind::D2)));
+        trials.push(Trial::test(name, move || {
+            run_snapshot_case(case, BackendKind::D2)
+        }));
     }
 
     for case_name in DOT_CURLY_CASES {
@@ -261,7 +273,9 @@ fn build_trials() -> Vec<Trial> {
         }
         let case = find_case(&cases, case_name).clone();
         let name = format!("dot_curly::{}", case.name);
-        trials.push(Trial::test(name, move || run_snapshot_case(case, BackendKind::DotCurly)));
+        trials.push(Trial::test(name, move || {
+            run_snapshot_case(case, BackendKind::DotCurly)
+        }));
     }
 
     for case_name in TIKZ_CASES {
@@ -270,7 +284,9 @@ fn build_trials() -> Vec<Trial> {
         }
         let case = find_case(&cases, case_name).clone();
         let name = format!("tikz::{}", case.name);
-        trials.push(Trial::test(name, move || run_snapshot_case(case, BackendKind::Tikz)));
+        trials.push(Trial::test(name, move || {
+            run_snapshot_case(case, BackendKind::Tikz)
+        }));
     }
 
     for case in ERROR_CASES {

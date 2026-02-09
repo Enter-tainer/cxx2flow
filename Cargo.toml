@@ -1,7 +1,7 @@
 [package]
 name = "cxx2flow"
 version = "0.6.2"
-edition = "2021"
+edition = "2024"
 authors = ["mgt <mgt@oi-wiki.org>"]
 description = "Convert your C/C++ code to control flow chart"
 license = "MIT"
@@ -15,7 +15,7 @@ name = "cxx2flow"
 path = "src/main.rs"
 
 [lib]
-name = "cxx2flow"
+name = "cxx2flow_lib"
 path = "src/lib.rs"
 crate-type = ["lib", "cdylib"]
 
@@ -25,32 +25,31 @@ path = "tests/snapshot_integration.rs"
 harness = false
 
 [dependencies]
-thiserror = "1.0"
-log = "0.4.22"
-tree-sitter = "0.22.6"
-tree-sitter-cpp = { version = "0.22.3" }
-petgraph = "0.6.5"
-itertools = "0.13.0"
+thiserror = "2.0.18"
+log = "0.4.29"
+tree-sitter = "0.26.5"
+tree-sitter-cpp = { version = "0.23.4" }
+petgraph = "0.8.3"
+itertools = "0.14.0"
 hash-chain = "0.3.2"
 enum_dispatch = "0.3.13"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-clap = { version = "4.5.16", features = ["derive", "wrap_help"] }
-colored = "2.1.0"
-miette = { version = "7.2.0", features = ["fancy"] }
+clap = { version = "4.5.57", features = ["derive", "wrap_help"] }
+colored = "3.0.0"
+miette = { version = "7.6.0", features = ["fancy"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-wasm-bindgen = "=0.2.89"
-miette = "7.2.0"
+wasm-bindgen = "0.2.108"
+miette = "7.6.0"
 
 [build-dependencies]
-anyhow = "1.0"
-cc = "1.2"
-vergen = { version = "8.3.1", features = [
+anyhow = "1.0.101"
+cc = "1.2.55"
+vergen = "9.1.0"
+vergen-gitcl = { version = "9.1.0", features = [
   "build",
   "cargo",
-  "git",
-  "git2",
   "rustc",
 ] }
 

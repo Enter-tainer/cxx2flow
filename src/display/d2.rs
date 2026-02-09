@@ -39,7 +39,7 @@ impl GraphDisplay for D2 {
                 GraphNodeType::Dummy => {
                     return Err(Error::UnexpectedDummyGraphNode {
                         graph: graph.clone(),
-                    })
+                    });
                 }
             }
         }
