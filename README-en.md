@@ -36,6 +36,14 @@ inline int read() {  //快读
 
 ## Installation
 
+### Online Usage (Recommended)
+
+**We recommend using the online web version directly - no download required!**
+
+Visit: https://enter-tainer.github.io/cxx2flow/
+
+The online version provides full functionality with a code editor and real-time flowchart preview, without installing any software.
+
 ### Compile from source
 
 ```bash
