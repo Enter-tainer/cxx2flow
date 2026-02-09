@@ -41,6 +41,9 @@ jobs:
         with:
           node-version: 24.13.0
 
+      - name: Make wasm compiler wrapper executable
+        run: chmod +x scripts/clang-wasm.sh
+
       - name: Build Rust wasm pkg
         run: |
           CC_wasm32_unknown_unknown="$PWD/scripts/clang-wasm.sh" wasm-pack build . --target web --release --out-dir pkg --out-name cxx2flow
