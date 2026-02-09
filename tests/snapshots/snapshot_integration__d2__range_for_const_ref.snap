@@ -1,0 +1,25 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "Vec nums;"
+D6: "int sum = 0;"
+D10: "& n_iter != nums.end()"
+D10.shape: diamond
+D11: "& n_iter = nums.begin()"
+D12: "++& n_iter"
+D15: "auto & n = *& n_iter"
+D19: "sum += n;"
+D21: "return sum;"
+D4 -> D6
+D6 -> D11
+D10 -> D21: N
+D11 -> D10
+D19 -> D12
+D12 -> D10
+D15 -> D19
+D10 -> D15: Y
+D21 -> D1
+D0 -> D4

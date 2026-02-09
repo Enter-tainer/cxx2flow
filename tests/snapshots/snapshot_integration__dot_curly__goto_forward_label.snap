@@ -1,0 +1,17 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+digraph {
+D0 [shape=box, style=rounded, label="begin"];
+{rank = sink; D1 [shape=box, style=rounded, label="end"];}
+D4 [shape=box, label="int x = 0;"];
+D8 [shape=box, label="x = 99;"];
+D10 [shape=box, label="x++;"];
+D12 [shape=box, label="return x;"];
+D4 -> D10;
+D10 -> D12;
+D8 -> D10;
+D12 -> D1;
+D0 -> D4;
+}

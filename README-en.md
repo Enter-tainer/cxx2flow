@@ -132,6 +132,31 @@ With `just`:
 just wasm-smoke
 ```
 
+## Web UI (React + shadcn-style + lucide)
+
+This repo includes a browser app under `web/`:
+
+- Left panel: C/C++ source editor
+- Right panel: Graphviz SVG preview
+- Engine: `cxx2flow` wasm + `@hpcc-js/wasm-graphviz`
+
+Run locally:
+
+```bash
+just web-install
+just web-dev
+```
+
+This web app uses `pnpm`.
+
+Build static assets:
+
+```bash
+just web-build
+```
+
+GitHub Pages deployment is configured in `.github/workflows/pages.yml` and triggers on push to `master`.
+
 Notes:
 
 - Browser/wasm mode only exposes DOT backend via `generate_dot`.

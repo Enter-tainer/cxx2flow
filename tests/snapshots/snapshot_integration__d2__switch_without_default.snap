@@ -1,0 +1,35 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "int v = 4;"
+D9: "(v) == 1"
+D9.shape: diamond
+D10: "(v) == 2"
+D10.shape: diamond
+D11: "(v) == 3"
+D11.shape: diamond
+D16: "v += 1;"
+D18: "break"
+D20: "v += 2;"
+D22: "break"
+D24: "v += 3;"
+D26: "break"
+D28: "return v;"
+D4 -> D9
+D18 -> D28
+D26 -> D28
+D20 -> D22
+D24 -> D26
+D9 -> D16: Y
+D16 -> D18
+D10 -> D11: N
+D9 -> D10: N
+D22 -> D28
+D11 -> D28: N
+D10 -> D20: Y
+D11 -> D24: Y
+D28 -> D1
+D0 -> D4

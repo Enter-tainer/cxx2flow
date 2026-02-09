@@ -1,0 +1,5 @@
+---
+source: tests/snapshot_integration.rs
+expression: "format!(\"{error:?}\")"
+---
+UnexpectedBreak { src: NamedSource { name: "unexpected_break.c", source: "<redacted>", language: None, range: SourceSpan { offset: SourceOffset(15), length: 6 } }

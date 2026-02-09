@@ -1,0 +1,29 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "int code = 'b';"
+D9: "(code) == 'a'"
+D9.shape: diamond
+D10: "(code) == 'b'"
+D10.shape: diamond
+D15: "code = 1;"
+D17: "break"
+D19: "code = 2;"
+D21: "break"
+D23: "code = 3;"
+D25: "return code;"
+D4 -> D9
+D21 -> D25
+D19 -> D21
+D23 -> D25
+D9 -> D10: N
+D17 -> D25
+D15 -> D17
+D10 -> D19: Y
+D10 -> D23: N
+D9 -> D15: Y
+D25 -> D1
+D0 -> D4

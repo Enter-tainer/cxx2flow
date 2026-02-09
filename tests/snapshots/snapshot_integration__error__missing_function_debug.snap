@@ -1,0 +1,5 @@
+---
+source: tests/snapshot_integration.rs
+expression: "format!(\"{error:?}\")"
+---
+FunctionNotFound { src: "missing_function", range: SourceSpan { offset: SourceOffset(0), length: 16 } }

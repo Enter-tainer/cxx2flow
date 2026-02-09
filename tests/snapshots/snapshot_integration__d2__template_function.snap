@@ -1,0 +1,15 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "(a > b)"
+D4.shape: diamond
+D9: "return a;"
+D11: "return b;"
+D4 -> D11: N
+D4 -> D9: Y
+D9 -> D1
+D11 -> D1
+D0 -> D4

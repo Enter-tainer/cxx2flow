@@ -1,0 +1,5 @@
+---
+source: tests/snapshot_integration.rs
+expression: "format!(\"{error:?}\")"
+---
+ChildNotFound

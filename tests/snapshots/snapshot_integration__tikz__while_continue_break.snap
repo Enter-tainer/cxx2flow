@@ -1,0 +1,42 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{ctex}
+\usetikzlibrary{graphdrawing}
+\usetikzlibrary{shapes}
+\usepackage{spverbatim}
+\usepackage{varwidth}
+\usetikzlibrary{graphs}
+\usegdlibrary{layered}
+\usepackage[T1]{fontenc}% NOT OT1!
+\usepackage{lmodern}% Latin Modern fonts,
+  % a modern variant of Computer Modern fonts
+\let\ttdefault\rmdefault
+\tikzstyle{block} = [%
+   draw,thick,fill=blue!0,
+   inner sep=0.3cm,
+   text centered, minimum height=1em,
+   execute at begin node={\begin{varwidth}{8em}},
+   execute at end node={\end{varwidth}}]
+\begin{document}
+\tikz [layered layout, sibling distance=3cm] {
+  \node[draw] (D0) [rounded rectangle, block] { Begin };
+\node[draw] (D1) [rounded rectangle, block] { End };
+\node[draw] (D4) [rectangle, block] { \spverb$int i = 0;$ }; \node[draw] (D6) [diamond, aspect=2, block] { \spverb$(i < 8)$ }; \node[draw] (D11) [rectangle, block] { \spverb$i++;$ }; \node[draw] (D13) [diamond, aspect=2, block] { \spverb$(i \% 2 == 0)$ }; \node[draw] (D18) [rectangle, block] { \spverb$continue$ }; \node[draw] (D20) [diamond, aspect=2, block] { \spverb$(i > 5)$ }; \node[draw] (D25) [rectangle, block] { \spverb$break$ }; \node[draw] (D27) [rectangle, block] { \spverb$return i;$ }; \draw (D4) edge[->] (D6);
+\draw (D25) edge[->] (D27);
+\draw (D6) edge[->, below] node { 27 } (DN);
+\draw (D11) edge[->] (D13);
+\draw (D13) edge[->, below] node { 20 } (DN);
+\draw (D13) edge[->, below] node { 18 } (DY);
+\draw (D18) edge[->] (D6);
+\draw (D20) edge[->, below] node { 6 } (DN);
+\draw (D20) edge[->, below] node { 25 } (DY);
+\draw (D6) edge[->, below] node { 11 } (DY);
+\draw (D27) edge[->] (D1);
+\draw (D0) edge[->] (D4);
+
+}
+\end{document}

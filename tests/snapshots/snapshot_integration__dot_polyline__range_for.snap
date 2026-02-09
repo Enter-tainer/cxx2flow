@@ -1,0 +1,27 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+digraph {
+graph [splines=polyline];
+D0 [shape=box, style=rounded, label="begin"];
+{rank = sink; D1 [shape=box, style=rounded, label="end"];}
+D4 [shape=box, label="Vec nums;"];
+D6 [shape=box, label="int sum = 0;"];
+D10 [shape=diamond, label="n_iter != nums.end()?"];
+D11 [shape=box, label="n_iter = nums.begin()"];
+D12 [shape=box, label="++n_iter"];
+D15 [shape=box, label="auto n = *n_iter"];
+D19 [shape=box, label="sum += n;"];
+D21 [shape=box, label="return sum;"];
+D4 -> D6;
+D6 -> D11;
+D10:e -> D21:n [xlabel=N];
+D11 -> D10;
+D19 -> D12;
+D12 -> D10;
+D15 -> D19;
+D10:s -> D15:n [xlabel=Y];
+D21 -> D1;
+D0 -> D4;
+}

@@ -1,0 +1,35 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{ctex}
+\usetikzlibrary{graphdrawing}
+\usetikzlibrary{shapes}
+\usepackage{spverbatim}
+\usepackage{varwidth}
+\usetikzlibrary{graphs}
+\usegdlibrary{layered}
+\usepackage[T1]{fontenc}% NOT OT1!
+\usepackage{lmodern}% Latin Modern fonts,
+  % a modern variant of Computer Modern fonts
+\let\ttdefault\rmdefault
+\tikzstyle{block} = [%
+   draw,thick,fill=blue!0,
+   inner sep=0.3cm,
+   text centered, minimum height=1em,
+   execute at begin node={\begin{varwidth}{8em}},
+   execute at end node={\end{varwidth}}]
+\begin{document}
+\tikz [layered layout, sibling distance=3cm] {
+  \node[draw] (D0) [rounded rectangle, block] { Begin };
+\node[draw] (D1) [rounded rectangle, block] { End };
+\node[draw] (D4) [diamond, aspect=2, block] { \spverb$(a > b)$ }; \node[draw] (D9) [rectangle, block] { \spverb$return a;$ }; \node[draw] (D11) [rectangle, block] { \spverb$return b;$ }; \draw (D4) edge[->, below] node { 11 } (DN);
+\draw (D4) edge[->, below] node { 9 } (DY);
+\draw (D9) edge[->] (D1);
+\draw (D11) edge[->] (D1);
+\draw (D0) edge[->] (D4);
+
+}
+\end{document}

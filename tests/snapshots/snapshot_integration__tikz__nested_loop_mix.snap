@@ -1,0 +1,47 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{ctex}
+\usetikzlibrary{graphdrawing}
+\usetikzlibrary{shapes}
+\usepackage{spverbatim}
+\usepackage{varwidth}
+\usetikzlibrary{graphs}
+\usegdlibrary{layered}
+\usepackage[T1]{fontenc}% NOT OT1!
+\usepackage{lmodern}% Latin Modern fonts,
+  % a modern variant of Computer Modern fonts
+\let\ttdefault\rmdefault
+\tikzstyle{block} = [%
+   draw,thick,fill=blue!0,
+   inner sep=0.3cm,
+   text centered, minimum height=1em,
+   execute at begin node={\begin{varwidth}{8em}},
+   execute at end node={\end{varwidth}}]
+\begin{document}
+\tikz [layered layout, sibling distance=3cm] {
+  \node[draw] (D0) [rounded rectangle, block] { Begin };
+\node[draw] (D1) [rounded rectangle, block] { End };
+\node[draw] (D4) [rectangle, block] { \spverb$int i = 0;$ }; \node[draw] (D6) [diamond, aspect=2, block] { \spverb$(i < 3)$ }; \node[draw] (D11) [rectangle, block] { \spverb$int j = 0;$ }; \node[draw] (D15) [diamond, aspect=2, block] { \spverb$(j < 4)$ }; \node[draw] (D18) [diamond, aspect=2, block] { \spverb$(j == 1)$ }; \node[draw] (D23) [rectangle, block] { \spverb$j++;$ }; \node[draw] (D25) [rectangle, block] { \spverb$continue$ }; \node[draw] (D27) [diamond, aspect=2, block] { \spverb$(i == 2 && j == 2)$ }; \node[draw] (D32) [rectangle, block] { \spverb$break$ }; \node[draw] (D34) [rectangle, block] { \spverb$j++;$ }; \node[draw] (D36) [rectangle, block] { \spverb$i++;$ }; \node[draw] (D38) [rectangle, block] { \spverb$return i;$ }; \draw (D4) edge[->] (D6);
+\draw (D6) edge[->, below] node { 38 } (DN);
+\draw (D32) edge[->] (D36);
+\draw (D15) edge[->, below] node { 36 } (DN);
+\draw (D11) edge[->] (D18);
+\draw (D18) edge[->, below] node { 27 } (DN);
+\draw (D18) edge[->, below] node { 23 } (DY);
+\draw (D27) edge[->, below] node { 34 } (DN);
+\draw (D25) edge[->] (D15);
+\draw (D23) edge[->] (D25);
+\draw (D27) edge[->, below] node { 32 } (DY);
+\draw (D34) edge[->] (D15);
+\draw (D36) edge[->] (D6);
+\draw (D15) edge[->, below] node { 18 } (DY);
+\draw (D6) edge[->, below] node { 11 } (DY);
+\draw (D38) edge[->] (D1);
+\draw (D0) edge[->] (D4);
+
+}
+\end{document}

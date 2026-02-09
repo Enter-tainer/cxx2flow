@@ -1,0 +1,26 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+digraph {
+graph [splines=polyline];
+D0 [shape=box, style=rounded, label="begin"];
+{rank = sink; D1 [shape=box, style=rounded, label="end"];}
+D4 [shape=box, label="int i = 0;"];
+D7 [shape=box, label="i++;"];
+D9 [shape=diamond, label="(i < 3)?"];
+D14 [shape=box, label="i++;"];
+D16 [shape=box, label="continue"];
+D18 [shape=diamond, label="(i < 5)?"];
+D24 [shape=box, label="return i;"];
+D4 -> D7;
+D7 -> D9;
+D9:s -> D14:n [xlabel=Y];
+D14 -> D16;
+D18:e -> D24:n [xlabel=N];
+D16 -> D9;
+D18:s -> D7:n [xlabel=Y];
+D9:e -> D18:n [xlabel=N];
+D24 -> D1;
+D0 -> D4;
+}

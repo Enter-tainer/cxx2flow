@@ -1,0 +1,21 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "int total = 0;"
+D8: "i != 4"
+D8.shape: diamond
+D9: "int i = 0;"
+D10: "i = i + 1"
+D13: "total += i;"
+D15: "return total;"
+D4 -> D9
+D8 -> D15: N
+D9 -> D8
+D13 -> D10
+D10 -> D8
+D8 -> D13: Y
+D15 -> D1
+D0 -> D4

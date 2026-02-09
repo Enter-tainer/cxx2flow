@@ -1,0 +1,40 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{ctex}
+\usetikzlibrary{graphdrawing}
+\usetikzlibrary{shapes}
+\usepackage{spverbatim}
+\usepackage{varwidth}
+\usetikzlibrary{graphs}
+\usegdlibrary{layered}
+\usepackage[T1]{fontenc}% NOT OT1!
+\usepackage{lmodern}% Latin Modern fonts,
+  % a modern variant of Computer Modern fonts
+\let\ttdefault\rmdefault
+\tikzstyle{block} = [%
+   draw,thick,fill=blue!0,
+   inner sep=0.3cm,
+   text centered, minimum height=1em,
+   execute at begin node={\begin{varwidth}{8em}},
+   execute at end node={\end{varwidth}}]
+\begin{document}
+\tikz [layered layout, sibling distance=3cm] {
+  \node[draw] (D0) [rounded rectangle, block] { Begin };
+\node[draw] (D1) [rounded rectangle, block] { End };
+\node[draw] (D4) [rectangle, block] { \spverb$Vec nums;$ }; \node[draw] (D6) [rectangle, block] { \spverb$int sum = 0;$ }; \node[draw] (D10) [diamond, aspect=2, block] { \spverb$n_iter != nums.end()$ }; \node[draw] (D11) [rectangle, block] { \spverb$n_iter = nums.begin()$ }; \node[draw] (D12) [rectangle, block] { \spverb$++n_iter$ }; \node[draw] (D15) [rectangle, block] { \spverb$auto n = *n_iter$ }; \node[draw] (D19) [rectangle, block] { \spverb$sum += n;$ }; \node[draw] (D21) [rectangle, block] { \spverb$return sum;$ }; \draw (D4) edge[->] (D6);
+\draw (D6) edge[->] (D11);
+\draw (D10) edge[->, below] node { 21 } (DN);
+\draw (D11) edge[->] (D10);
+\draw (D19) edge[->] (D12);
+\draw (D12) edge[->] (D10);
+\draw (D15) edge[->] (D19);
+\draw (D10) edge[->, below] node { 15 } (DY);
+\draw (D21) edge[->] (D1);
+\draw (D0) edge[->] (D4);
+
+}
+\end{document}

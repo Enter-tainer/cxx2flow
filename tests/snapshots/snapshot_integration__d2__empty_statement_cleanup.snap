@@ -1,0 +1,13 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "int x = 0;"
+D8: "x++;"
+D12: "return x;"
+D8 -> D12
+D4 -> D8
+D12 -> D1
+D0 -> D4

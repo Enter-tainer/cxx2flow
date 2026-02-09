@@ -1,0 +1,17 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "int x = 0;"
+D7: "x++;"
+D9: "(x < 3)"
+D9.shape: diamond
+D15: "return x;"
+D4 -> D7
+D7 -> D9
+D9 -> D7: Y
+D9 -> D15: N
+D15 -> D1
+D0 -> D4

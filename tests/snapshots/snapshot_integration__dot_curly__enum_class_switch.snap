@@ -1,0 +1,31 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+digraph {
+D0 [shape=box, style=rounded, label="begin"];
+{rank = sink; D1 [shape=box, style=rounded, label="end"];}
+D4 [shape=box, label="State state = State::Work;"];
+D6 [shape=box, label="int v = 0;"];
+D11 [shape=diamond, label="(state) == State::Init?"];
+D12 [shape=diamond, label="(state) == State::Work?"];
+D17 [shape=box, label="v = 1;"];
+D19 [shape=box, label="break"];
+D21 [shape=box, label="v = 2;"];
+D23 [shape=box, label="break"];
+D25 [shape=box, label="v = 3;"];
+D27 [shape=box, label="return v;"];
+D4 -> D6;
+D6 -> D11;
+D23 -> D27;
+D21 -> D23;
+D25 -> D27;
+D11:e -> D12:n [xlabel=N];
+D19 -> D27;
+D17 -> D19;
+D12:s -> D21:n [xlabel=Y];
+D12:e -> D25:n [xlabel=N];
+D11:s -> D17:n [xlabel=Y];
+D27 -> D1;
+D0 -> D4;
+}

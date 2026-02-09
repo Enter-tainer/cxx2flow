@@ -1,0 +1,19 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "Runner r;"
+D6: "int y = r.run();"
+D8: "(y > 2)"
+D8.shape: diamond
+D13: "y++;"
+D15: "return y;"
+D4 -> D6
+D6 -> D8
+D8 -> D15: N
+D13 -> D15
+D8 -> D13: Y
+D15 -> D1
+D0 -> D4

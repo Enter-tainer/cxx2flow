@@ -1,0 +1,29 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "int i = 0;"
+D6: "(i < 8)"
+D6.shape: diamond
+D11: "i++;"
+D13: "(i % 2 == 0)"
+D13.shape: diamond
+D18: "continue"
+D20: "(i > 5)"
+D20.shape: diamond
+D25: "break"
+D27: "return i;"
+D4 -> D6
+D25 -> D27
+D6 -> D27: N
+D11 -> D13
+D13 -> D20: N
+D13 -> D18: Y
+D18 -> D6
+D20 -> D6: N
+D20 -> D25: Y
+D6 -> D11: Y
+D27 -> D1
+D0 -> D4
