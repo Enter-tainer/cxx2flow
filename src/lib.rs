@@ -1,10 +1,20 @@
 mod ast;
+#[cfg(not(target_family = "wasm"))]
 pub mod cli;
 pub mod display;
+#[cfg(not(target_family = "wasm"))]
 pub mod dump;
 pub mod error;
 mod graph;
 mod parser;
+#[cfg(target_family = "wasm")]
+mod wasm;
+#[cfg(target_family = "wasm")]
+mod wasm_sysroot;
+
+#[cfg(target_family = "wasm")]
+pub use wasm::*;
+
 use display::{GraphDisplay, GraphDisplayBackend};
 use error::Result;
 pub fn generate(

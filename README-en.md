@@ -96,3 +96,44 @@ https://github.com/Enter-tainer/cxx2flow
 - The support of preprocessor is based on `cpp`, and is disabled by default. `--cpp` flag is needed to enable it. It will fail if `cpp` does not exist in `PATH`.
 - Supported control flow keyword: while，for，if，break，continue，break，return，switch, goto, do-while。
 - Very basic support for range based loop in C++ 11.
+
+## WebAssembly (browser / Node.js)
+
+`cxx2flow` now provides a wasm entrypoint `generate_dot(content, function_name, curly)` for browser usage.
+
+Build wasm package:
+
+```bash
+CC_wasm32_unknown_unknown="$PWD/scripts/clang-wasm.sh" wasm-pack build --target web --release
+```
+
+Or use `just` (auto-detect OS):
+
+```bash
+just wasm-build
+```
+
+Windows (PowerShell):
+
+```bash
+$env:CC_wasm32_unknown_unknown = (Resolve-Path scripts/clang-wasm.cmd).Path
+wasm-pack build --target web --release
+```
+
+Run minimal smoke test in Node.js:
+
+```bash
+node scripts/wasm-smoke.mjs
+```
+
+With `just`:
+
+```bash
+just wasm-smoke
+```
+
+Notes:
+
+- Browser/wasm mode only exposes DOT backend via `generate_dot`.
+- CLI-only features (like `--cpp` and AST dump coloring output) are native-mode only.
+- `.cargo/config.toml` is intentionally not used for wasm toolchain wiring; set `CC_wasm32_unknown_unknown` explicitly per shell/session.

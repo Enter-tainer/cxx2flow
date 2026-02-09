@@ -1,6 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::ast::{Ast, AstNode};
+#[cfg(not(target_family = "wasm"))]
 #[allow(unused_imports)]
 use crate::dump::dump_node;
 use crate::error::{Error, Result};
