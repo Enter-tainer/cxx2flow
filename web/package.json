@@ -10,11 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bjorn3/browser_wasi_shim": "^0.4.2",
     "@hpcc-js/wasm-graphviz": "^1.12.0",
     "@radix-ui/react-select": "^2.1.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cxx2flow": "file:../pkg",
     "lucide-react": "^0.563.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

@@ -320,7 +320,7 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
     let mut cursor = body.walk();
     cursor.goto_first_child(); // brace
     cursor.goto_next_sibling(); // case statement
-    // dbg!(cursor.node());
+                                // dbg!(cursor.node());
     loop {
         let (child, label) = get_case_child_and_label(cursor.clone(), content)?;
         labels.push(label.clone());

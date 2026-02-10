@@ -9,8 +9,6 @@ mod graph;
 mod parser;
 #[cfg(target_family = "wasm")]
 mod wasm;
-#[cfg(target_family = "wasm")]
-mod wasm_sysroot;
 
 #[cfg(target_family = "wasm")]
 pub use wasm::*;

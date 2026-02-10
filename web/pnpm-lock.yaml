@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@bjorn3/browser_wasi_shim':
+        specifier: ^0.4.2
+        version: 0.4.2
       '@hpcc-js/wasm-graphviz':
         specifier: ^1.12.0
         version: 1.21.0
@@ -20,9 +23,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      cxx2flow:
-        specifier: file:../pkg
-        version: file:../pkg
       lucide-react:
         specifier: ^0.563.0
         version: 0.563.0(react@19.2.4)
@@ -36,6 +36,9 @@ importers:
         specifier: ^3.3.1
         version: 3.4.0
     devDependencies:
+      '@types/node':
+        specifier: ^24.3.0
+        version: 24.10.12
       '@types/react':
         specifier: ^19.2.13
         version: 19.2.13
@@ -44,7 +47,7 @@ importers:
         version: 19.2.3(@types/react@19.2.13)
       '@vitejs/plugin-react':
         specifier: ^5.0.2
-        version: 5.1.3(vite@7.3.1(jiti@1.21.7)(lightningcss@1.30.2))
+        version: 5.1.3(vite@7.3.1(@types/node@24.10.12)(jiti@1.21.7)(lightningcss@1.30.2))
       autoprefixer:
         specifier: ^10.4.21
         version: 10.4.24(postcss@8.5.6)
@@ -59,7 +62,7 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^7.1.4
-        version: 7.3.1(jiti@1.21.7)(lightningcss@1.30.2)
+        version: 7.3.1(@types/node@24.10.12)(jiti@1.21.7)(lightningcss@1.30.2)
 
 packages:
 
@@ -149,6 +152,9 @@ packages:
   '@babel/types@7.29.0':
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
+
+  '@bjorn3/browser_wasi_shim@0.4.2':
+    resolution: {integrity: sha512-/iHkCVUG3VbcbmEHn5iIUpIrh7a7WPiwZ3sHy4HZKZzBdSadwdddYDZAII2zBvQYV0Lfi8naZngPCN7WPHI/hA==}
 
   '@esbuild/aix-ppc64@0.27.3':
     resolution: {integrity: sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg==}
@@ -747,6 +753,9 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/node@24.10.12':
+    resolution: {integrity: sha512-68e+T28EbdmLSTkPgs3+UacC6rzmqrcWFPQs1C8mwJhI/r5Uxr0yEuQotczNRROd1gq30NGxee+fo0rSIxpyAw==}
+
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
     peerDependencies:
@@ -831,9 +840,6 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
-
-  cxx2flow@file:../pkg:
-    resolution: {directory: ../pkg, type: directory}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -1269,6 +1275,9 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+
   update-browserslist-db@1.2.3:
     resolution: {integrity: sha512-Js0m9cx+qOgDxo0eMiFGEueWztz+d4+M3rGlmKPT+T4IS/jP4ylw3Nwpu6cpTTP8R1MAC1kF4VbdLt3ARf209w==}
     hasBin: true
@@ -1456,6 +1465,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
+
+  '@bjorn3/browser_wasi_shim@0.4.2': {}
 
   '@esbuild/aix-ppc64@0.27.3':
     optional: true
@@ -1903,6 +1914,10 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/node@24.10.12':
+    dependencies:
+      undici-types: 7.16.0
+
   '@types/react-dom@19.2.3(@types/react@19.2.13)':
     dependencies:
       '@types/react': 19.2.13
@@ -1911,7 +1926,7 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@vitejs/plugin-react@5.1.3(vite@7.3.1(jiti@1.21.7)(lightningcss@1.30.2))':
+  '@vitejs/plugin-react@5.1.3(vite@7.3.1(@types/node@24.10.12)(jiti@1.21.7)(lightningcss@1.30.2))':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.29.0)
@@ -1919,7 +1934,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-rc.2
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
-      vite: 7.3.1(jiti@1.21.7)(lightningcss@1.30.2)
+      vite: 7.3.1(@types/node@24.10.12)(jiti@1.21.7)(lightningcss@1.30.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -1990,8 +2005,6 @@ snapshots:
   cssesc@3.0.0: {}
 
   csstype@3.2.3: {}
-
-  cxx2flow@file:../pkg: {}
 
   debug@4.4.3:
     dependencies:
@@ -2402,6 +2415,8 @@ snapshots:
 
   typescript@5.9.3: {}
 
+  undici-types@7.16.0: {}
+
   update-browserslist-db@1.2.3(browserslist@4.28.1):
     dependencies:
       browserslist: 4.28.1
@@ -2425,7 +2440,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite@7.3.1(jiti@1.21.7)(lightningcss@1.30.2):
+  vite@7.3.1(@types/node@24.10.12)(jiti@1.21.7)(lightningcss@1.30.2):
     dependencies:
       esbuild: 0.27.3
       fdir: 6.5.0(picomatch@4.0.3)
@@ -2434,6 +2449,7 @@ snapshots:
       rollup: 4.57.1
       tinyglobby: 0.2.15
     optionalDependencies:
+      '@types/node': 24.10.12
       fsevents: 2.3.3
       jiti: 1.21.7
       lightningcss: 1.30.2

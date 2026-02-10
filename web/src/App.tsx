@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, RotateCcw, Sparkles } from 'lucide-react'
 import { Graphviz } from '@hpcc-js/wasm-graphviz'
-import initWasm, { generate_dot } from 'cxx2flow'
-import wasmUrl from 'cxx2flow/cxx2flow_bg.wasm?url'
+import { generate_dot, initWasm } from '@/lib/cxx2flow-wasi'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -46,17 +45,7 @@ export default function App() {
       try {
         setIsEngineLoading(true)
 
-        const [wasmBinary, gv] = await Promise.all([
-          fetch(wasmUrl).then(async (response) => {
-            if (!response.ok) {
-              throw new Error(`Failed to fetch wasm: ${response.status} ${response.statusText}`)
-            }
-            return response.arrayBuffer()
-          }),
-          Graphviz.load(),
-        ])
-
-        await initWasm(wasmBinary)
+        const [, gv] = await Promise.all([initWasm(), Graphviz.load()])
 
         if (cancelled) {
           return

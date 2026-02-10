@@ -3,9 +3,9 @@ use crate::error::{Error, Result};
 use hash_chain::ChainMap;
 use itertools::{Itertools, Position};
 use miette::NamedSource;
-use petgraph::EdgeDirection;
 use petgraph::stable_graph::{NodeIndex, StableDiGraph};
 use petgraph::visit::{EdgeRef, IntoNodeReferences};
+use petgraph::EdgeDirection;
 use std::collections::HashMap;
 use std::{cell::RefCell, rc::Rc};
 #[derive(Debug, PartialEq, Eq, Clone)]
