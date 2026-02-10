@@ -74,19 +74,9 @@ const ERROR_CASES: &[ErrorCase] = &[
         fixture_name: "unexpected_break",
         function: "main",
     },
-    ErrorCase {
-        snapshot_name: "error__switch_comment_and_fallthrough_debug",
-        fixture_name: "switch_comment_and_fallthrough",
-        function: "main",
-    },
-    ErrorCase {
-        snapshot_name: "error__switch_empty_body_debug",
-        fixture_name: "switch_empty_body",
-        function: "main",
-    },
 ];
 
-const KNOWN_BROKEN_CASES: &[&str] = &["switch_comment_and_fallthrough", "switch_empty_body"];
+const KNOWN_BROKEN_CASES: &[&str] = &[];
 
 fn project_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()

@@ -1,0 +1,15 @@
+---
+source: tests/snapshot_integration.rs
+assertion_line: 217
+expression: output
+---
+digraph {
+graph [splines=polyline];
+D0 [shape=box, style=rounded, label="begin"];
+{rank = sink; D1 [shape=box, style=rounded, label="end"];}
+D4 [shape=box, label="int x = 1;"];
+D12 [shape=box, label="return x;"];
+D4 -> D12;
+D12 -> D1;
+D0 -> D4;
+}

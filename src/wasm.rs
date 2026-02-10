@@ -1,7 +1,7 @@
 use std::{cell::RefCell, ptr, slice, str};
 
 use crate::{
-    display::{dot::Dot, GraphDisplayBackend},
+    display::{GraphDisplayBackend, dot::Dot},
     generate,
 };
 

@@ -1,0 +1,12 @@
+---
+source: tests/snapshot_integration.rs
+assertion_line: 217
+expression: output
+---
+D0: begin
+D1: end
+D4: "int x = 1;"
+D12: "return x;"
+D4 -> D12
+D12 -> D1
+D0 -> D4

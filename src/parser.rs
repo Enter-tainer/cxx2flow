@@ -318,31 +318,45 @@ fn parse_switch_stat(switch_stat: Node, content: &[u8]) -> Result<Rc<RefCell<Ast
     let mut labels = Vec::new();
     let mut cases = Vec::new();
     let mut cursor = body.walk();
-    cursor.goto_first_child(); // brace
-    cursor.goto_next_sibling(); // case statement
-                                // dbg!(cursor.node());
-    loop {
-        let (child, label) = get_case_child_and_label(cursor.clone(), content)?;
-        labels.push(label.clone());
-        cases.push(label);
-        if let Some(child) = child {
-            let mut cursor = child;
-            let first_idx = stats.len();
-            loop {
-                let stat = parse_stat(cursor.node(), content)?;
-                stats.push(stat);
-                if !cursor.goto_next_sibling() {
+    let mut has_case = false;
+    if cursor.goto_first_child() {
+        // skip opening brace and possible comment nodes between cases
+        while cursor.goto_next_sibling() {
+            if cursor.node().kind() == "case_statement" {
+                has_case = true;
+                break;
+            }
+        }
+    }
+    if has_case {
+        loop {
+            let (child, label) = get_case_child_and_label(cursor.clone(), content)?;
+            labels.push(label.clone());
+            cases.push(label);
+            if let Some(child) = child {
+                let mut cursor = child;
+                let first_idx = stats.len();
+                loop {
+                    let stat = parse_stat(cursor.node(), content)?;
+                    stats.push(stat);
+                    if !cursor.goto_next_sibling() {
+                        break;
+                    }
+                }
+                stats[first_idx].borrow_mut().label = Some(labels.clone());
+                labels.clear();
+            }
+
+            let mut found_next_case = false;
+            while cursor.goto_next_sibling() {
+                if cursor.node().kind() == "case_statement" {
+                    found_next_case = true;
                     break;
                 }
             }
-            stats[first_idx].borrow_mut().label = Some(labels.clone());
-            labels.clear();
-        }
-        if !cursor.goto_next_sibling() {
-            break;
-        }
-        if cursor.node().kind() != "case_statement" {
-            break;
+            if !found_next_case {
+                break;
+            }
         }
     }
     let inner = Rc::new(RefCell::new(Ast::new(

@@ -1,5 +1,0 @@
----
-source: tests/snapshot_integration.rs
-expression: "format!(\"{error:?}\")"
----
-UnexpectedOutgoingEdges { node_index: NodeIndex(7), neighbors: [], graph: StableGraph { Ty: "Directed", node_count: 11, edge_count: 11, edges: (4, 8), (16, 18), (9, 7), (8, 12), (8, 9), (9, 18), (12, 14), (14, 13), (13, 16), (18, 1), (0, 4), node weights: {0: Begin, 1: End, 4: Node("int x = 1;"), 7: Dummy, 8: Choice("(x) == 0"), 9: Choice("(x) == 1"), 12: Dummy, 13: Dummy, 14: Node("x = x + 10;"), 16: Node("break"), 18: Node("return x;")}, edge weights: {0: Normal, 2: Normal, 4: Branch(true), 5: Branch(true), 6: Branch(false), 7: Branch(false), 11: Normal, 12: Normal, 13: Normal, 17: Normal, 18: Normal}, free_node: NodeIndex(6), free_edge: EdgeIndex(3) } }

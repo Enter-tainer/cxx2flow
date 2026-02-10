@@ -1,0 +1,34 @@
+---
+source: tests/snapshot_integration.rs
+assertion_line: 217
+expression: output
+---
+D0: begin
+D1: end
+D4: "int x = 1;"
+D10: "(x) == 0"
+D10.shape: diamond
+D11: "(x) == 1"
+D11.shape: diamond
+D12: "(x) == 2"
+D12.shape: diamond
+D17: "x = x + 10;"
+D19: "break"
+D21: "x = x + 20;"
+D23: "break"
+D25: "x = x + 30;"
+D27: "return x;"
+D4 -> D10
+D23 -> D27
+D21 -> D23
+D25 -> D27
+D11 -> D12: N
+D10 -> D11: N
+D19 -> D27
+D17 -> D19
+D12 -> D21: Y
+D11 -> D21: Y
+D12 -> D25: N
+D10 -> D17: Y
+D27 -> D1
+D0 -> D4

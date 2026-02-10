@@ -1,0 +1,35 @@
+---
+source: tests/snapshot_integration.rs
+expression: output
+---
+D0: begin
+D1: end
+D4: "int aaa = 0;"
+D11: "(aaa) == 1"
+D11.shape: diamond
+D12: "(aaa) == 2"
+D12.shape: diamond
+D13: "(aaa) == 3"
+D13.shape: diamond
+D14: "(aaa) == 4"
+D14.shape: diamond
+D19: "aaa = 2;"
+D21: "break"
+D23: "aaa = 4;"
+D25: "break"
+D27: "break"
+D4 -> D11
+D21 -> D1
+D27 -> D1
+D23 -> D25
+D12 -> D19: Y
+D13 -> D14: N
+D12 -> D13: N
+D11 -> D12: N
+D25 -> D1
+D0 -> D4
+D14 -> D23: Y
+D13 -> D23: Y
+D19 -> D21
+D14 -> D27: N
+D11 -> D19: Y
