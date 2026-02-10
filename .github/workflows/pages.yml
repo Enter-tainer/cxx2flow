@@ -24,12 +24,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown
-
-      - name: Setup wasm-pack
-        uses: jetli/wasm-pack-action@v0.4.0
-        with:
-          version: latest
+          targets: wasm32-wasip1
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -41,20 +36,34 @@ jobs:
         with:
           node-version: 24.13.0
 
-      - name: Make wasm compiler wrapper executable
-        run: chmod +x scripts/clang-wasm.sh
+      - name: Setup just
+        uses: taiki-e/install-action@just
 
-      - name: Build Rust wasm pkg
+      - name: Download WASI SDK
         run: |
-          CC_wasm32_unknown_unknown="$PWD/scripts/clang-wasm.sh" wasm-pack build . --target web --release --out-dir pkg --out-name cxx2flow
+          set -euo pipefail
+          WASI_SDK_URL="$(curl -fsSL https://api.github.com/repos/WebAssembly/wasi-sdk/releases/latest | grep -Eo 'https://[^"]*wasi-sdk-[^"]*-x86_64-linux\.tar\.gz' | head -n1)"
+          if [ -z "$WASI_SDK_URL" ]; then
+            echo "Failed to resolve latest WASI SDK Linux tarball URL"
+            exit 1
+          fi
+          curl -fsSL "$WASI_SDK_URL" -o wasi-sdk.tar.gz
+          tar -xzf wasi-sdk.tar.gz
+          SDK_DIR="$(find "$PWD" -maxdepth 1 -type d -name 'wasi-sdk-*' | head -n1)"
+          if [ -z "$SDK_DIR" ]; then
+            echo "Failed to locate extracted WASI SDK directory"
+            exit 1
+          fi
+          echo "WASI_SDK_PATH=$SDK_DIR" >> "$GITHUB_ENV"
 
       - name: Install web deps
-        run: pnpm install --no-frozen-lockfile
-        working-directory: web
+        run: just web-install
 
       - name: Build web
-        run: pnpm build
-        working-directory: web
+        run: |
+          export CC_wasm32_wasip1="$WASI_SDK_PATH/bin/clang"
+          export CFLAGS_wasm32_wasip1="--sysroot=$WASI_SDK_PATH/share/wasi-sysroot"
+          just web-build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

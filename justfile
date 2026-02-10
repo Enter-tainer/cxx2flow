@@ -1,6 +1,6 @@
 set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 
-wasi_sdk_path := justfile_directory() / "wasi-sdk"
+wasi_sdk_path := env_var_or_default("WASI_SDK_PATH", justfile_directory() / "wasi-sdk")
 
 default:
     @just --list
