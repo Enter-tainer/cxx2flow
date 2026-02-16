@@ -35,7 +35,7 @@ hash-chain = "0.3.2"
 enum_dispatch = "0.3.13"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-clap = { version = "4.5.57", features = ["derive", "wrap_help"] }
+clap = { version = "4.5.58", features = ["derive", "wrap_help"] }
 colored = "3.0.0"
 miette = { version = "7.6.0", features = ["fancy"] }
 
