@@ -27,7 +27,7 @@ harness = false
 [dependencies]
 thiserror = "2.0.18"
 log = "0.4.29"
-tree-sitter = "0.26.5"
+tree-sitter = "0.26.6"
 tree-sitter-cpp = { version = "0.23.4" }
 petgraph = "0.8.3"
 itertools = "0.14.0"
